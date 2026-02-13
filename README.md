@@ -86,12 +86,6 @@ All powered by a modern scalable architecture.
 - Role-based UI rendering
 - Multi-language support (EN / HI / TE)
 
-### Optional Full Stack (Extendable)
-- Node.js
-- Express
-- MongoDB
-- JWT Authentication
-
 ---
 
 ## 🎨 System Architecture
