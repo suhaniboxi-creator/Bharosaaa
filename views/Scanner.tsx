@@ -6,9 +6,10 @@ interface ScannerProps {
   onScan: (qrValue: string) => Promise<boolean>;
   registeredPilgrims: Pilgrim[];
   currentTemple?: Temple;
+  t?: (key: any) => string;
 }
 
-export const Scanner: React.FC<ScannerProps> = ({ onScan, registeredPilgrims, currentTemple }) => {
+export const Scanner: React.FC<ScannerProps> = ({ onScan, registeredPilgrims, currentTemple, t }) => {
   const [scanResult, setScanResult] = useState<'IDLE' | 'SUCCESS' | 'ERROR' | 'SYNCING'>('IDLE');
   const [manualInput, setManualInput] = useState('');
   const [isCameraActive, setIsCameraActive] = useState(false);

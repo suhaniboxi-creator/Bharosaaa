@@ -8,9 +8,7 @@ interface LayoutProps {
   setActiveTab: (tab: string) => void;
   language: Language;
   setLanguage: (l: Language) => void;
-  temples: Temple[];
   currentTemple: Temple;
-  setCurrentTemple: (t: Temple) => void;
   isDarkMode: boolean;
   toggleDarkMode: () => void;
   currentRole: UserRole;
@@ -20,14 +18,19 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ 
   children, activeTab, setActiveTab, language, setLanguage, 
-  temples, currentTemple, setCurrentTemple, isDarkMode, toggleDarkMode, currentRole, onLogout, t 
+  currentTemple, isDarkMode, toggleDarkMode, currentRole, onLogout, t 
 }) => {
   const allTabs = [
-    { id: 'registration', label: t('registration'), icon: 'fa-user-plus', roles: ['ADMIN', 'REGISTERER'] },
-    { id: 'scanner', label: t('scanner'), icon: 'fa-qrcode', roles: ['ADMIN', 'REGISTERER'] },
+    { id: 'registration', label: t('registration'), icon: 'fa-user-plus', roles: ['ADMIN', 'REGISTERER', 'PILGRIM'] },
+    { id: 'desk-exit', label: 'Desk Exit', icon: 'fa-door-open', roles: ['ADMIN', 'EXIT_OFFICER'] },
     { id: 'dashboard', label: t('adminView'), icon: 'fa-chart-line', roles: ['ADMIN'] },
     { id: 'ledger', label: t('ledger'), icon: 'fa-database', roles: ['ADMIN'] },
-    { id: 'kiosk', label: t('pilgrimApp'), icon: 'fa-mobile-screen', roles: ['ADMIN', 'PILGRIM'] },
+    { id: 'pilgrim-map', label: 'Temple Map', icon: 'fa-map-location-dot', roles: ['ADMIN', 'PILGRIM'] },
+    { id: 'pilgrim-quests', label: 'Divine Quests', icon: 'fa-shield-heart', roles: ['PILGRIM'] },
+    { id: 'pilgrim-rituals', label: 'Sacred Rituals', icon: 'fa-dice-d20', roles: ['PILGRIM'] },
+    { id: 'pilgrim-quiz', label: 'Temple Quiz', icon: 'fa-brain', roles: ['PILGRIM'] },
+    { id: 'pilgrim-services', label: 'Divine Services', icon: 'fa-hand-sparkles', roles: ['PILGRIM'] },
+    { id: 'pilgrim-rank', label: 'Leaderboard', icon: 'fa-trophy', roles: ['PILGRIM'] },
   ];
 
   const visibleTabs = allTabs.filter(tab => tab.roles.includes(currentRole));
@@ -50,31 +53,6 @@ export const Layout: React.FC<LayoutProps> = ({
         </div>
 
         <div className="p-6 flex-1 overflow-y-auto">
-          <label className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-4 block">Temple Selection</label>
-          <div className="space-y-1 mb-8">
-            {temples.map(temple => (
-              <button
-                key={temple.id}
-                onClick={() => setCurrentTemple(temple)}
-                className={`w-full text-left px-4 py-3 rounded-xl text-sm transition-all flex items-center gap-3 group ${
-                  currentTemple.id === temple.id 
-                    ? 'bg-white/10 text-white font-bold ring-1 ring-white/20 shadow-inner' 
-                    : 'text-white/50 hover:bg-white/5 hover:text-white'
-                }`}
-              >
-                <div 
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${currentTemple.id === temple.id ? 'scale-125 opacity-100' : 'opacity-0 scale-50'}`}
-                  style={{ backgroundColor: temple.themeColor }}
-                ></div>
-                <i className={`fas ${temple.icon} w-5 opacity-70 group-hover:scale-110 transition-transform`}></i>
-                <div className="flex-1">
-                  <p className="leading-tight">{temple.name}</p>
-                  <p className="text-[9px] opacity-40 font-normal">{temple.location}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-
           <label className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-4 block">Navigation</label>
           <nav className="space-y-2">
             {visibleTabs.map((tab) => (

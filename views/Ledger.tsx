@@ -9,7 +9,7 @@ interface LedgerProps {
 }
 
 export const Ledger: React.FC<LedgerProps> = ({ transactions, currentTemple, t }) => {
-  const [filter, setFilter] = useState<'ALL' | 'ENTRY' | 'DONATION' | 'VIP_ENTRY' | 'EMERGENCY_SOS'>('ALL');
+  const [filter, setFilter] = useState<'ALL' | 'ENTRY' | 'EXIT' | 'DONATION' | 'VIP_ENTRY' | 'EMERGENCY_SOS'>('ALL');
 
   const filtered = transactions.filter(t => filter === 'ALL' || t.type === filter);
   const themePrimary = currentTemple?.themeColor || '#F97316';
@@ -22,7 +22,7 @@ export const Ledger: React.FC<LedgerProps> = ({ transactions, currentTemple, t }
            <span className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight">Immutable Chain</span>
         </div>
         <div className="flex flex-wrap gap-2">
-          {['ALL', 'ENTRY', 'DONATION', 'EMERGENCY_SOS'].map(f => (
+          {['ALL', 'ENTRY', 'EXIT', 'DONATION', 'EMERGENCY_SOS'].map(f => (
             <button
               key={f}
               onClick={() => setFilter(f as any)}
@@ -59,12 +59,16 @@ export const Ledger: React.FC<LedgerProps> = ({ transactions, currentTemple, t }
             >
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${
                 tx.type === 'ENTRY' ? 'bg-blue-500/10 text-blue-500' :
-                tx.type === 'EMERGENCY_SOS' ? 'bg-red-500/10 text-red-500' :
+                tx.type === 'EXIT' ? 'bg-red-500/10 text-red-500' :
+                tx.type === 'EMERGENCY_SOS' ? 'bg-rose-500/10 text-rose-500' :
+                tx.type === 'DONATION' ? 'bg-emerald-500/10 text-emerald-500' :
                 'bg-green-500/10 text-green-500'
               }`}>
                 <i className={`fas ${
                   tx.type === 'ENTRY' ? 'fa-user-check' :
+                  tx.type === 'EXIT' ? 'fa-door-open' :
                   tx.type === 'EMERGENCY_SOS' ? 'fa-triangle-exclamation' :
+                  tx.type === 'DONATION' ? 'fa-hand-holding-heart' :
                   'fa-shield-halved'
                 } text-2xl`}></i>
               </div>
