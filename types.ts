@@ -1,5 +1,5 @@
 
-export type ColorCode = 'RED' | 'BLUE' | 'GREEN' | 'ORANGE';
+export type ColorCode = 'RED' | 'ORANGE' | 'YELLOW' | 'BROWN';
 export type AlertStatus = 'ACTIVE' | 'EN_ROUTE' | 'RESOLVED';
 export type Language = 'EN' | 'HI' | 'TE';
 export type UserRole = 'ADMIN' | 'REGISTERER' | 'EXIT_OFFICER' | 'PILGRIM' | 'NONE';

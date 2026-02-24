@@ -24,7 +24,7 @@ export const Scanner: React.FC<ScannerProps> = ({ onScan, registeredPilgrims, cu
     
     const success = await onScan(value);
     const pilgrim = registeredPilgrims.find(p => p.qrValue === value);
-    setLastScannedName(pilgrim?.name || 'Unknown User');
+    setLastScannedName(pilgrim?.qrValue || 'Unknown Scarf');
     setScanResult(success ? 'SUCCESS' : 'ERROR');
     
     setTimeout(() => {
@@ -112,7 +112,7 @@ export const Scanner: React.FC<ScannerProps> = ({ onScan, registeredPilgrims, cu
                  <i className="fas fa-check text-5xl"></i>
               </div>
               <h2 className="text-4xl font-black tracking-tight uppercase italic">Access Verified</h2>
-              <p className="text-xl font-bold mt-2">{lastScannedName}</p>
+              <p className="text-xl font-mono mt-2">{lastScannedName}</p>
               <div className="mt-8 bg-black/20 px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
                  <i className="fas fa-microchip"></i> Scarf ID Authenticated
               </div>
@@ -152,25 +152,25 @@ export const Scanner: React.FC<ScannerProps> = ({ onScan, registeredPilgrims, cu
         </div>
 
         <div className="bg-slate-900 text-white p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col justify-between">
-          <i className="fas fa-network-wired absolute -right-10 -bottom-10 text-[10rem] opacity-5"></i>
-          <h3 className="font-black uppercase tracking-[0.3em] text-xs text-slate-400 mb-6">Real-time Node Status</h3>
+          <i className={`fas ${currentTemple?.icon || 'fa-om'} absolute -right-10 -bottom-10 text-[10rem] opacity-5`}></i>
+          <h3 className="font-black uppercase tracking-[0.3em] text-xs text-slate-400 mb-6">Temple Live Insights</h3>
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Network Hashrate</span>
-              <span className="font-mono text-green-400">42.8 TH/s</span>
+              <span className="text-sm font-medium">Current Crowd Density</span>
+              <span className="font-mono text-orange-400">MODERATE (64%)</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Turnstile State</span>
-              <span className="px-3 py-1 bg-red-500/20 text-red-500 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-500/20">Locked</span>
+              <span className="text-sm font-medium">Active Pilgrims in Node</span>
+              <span className="font-mono text-green-400">{registeredPilgrims.filter(p => p.status === 'CHECKED_IN').length} Souls</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Data Flow Latency</span>
-              <span className="font-mono">14ms</span>
+              <span className="text-sm font-medium">Avg. Sanctum Wait Time</span>
+              <span className="font-mono">18 Minutes</span>
             </div>
           </div>
           <div className="mt-8 pt-6 border-t border-white/10 flex items-center gap-3">
              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-             <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Blockchain Sync Active</span>
+             <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Divine Flow Optimized</span>
           </div>
         </div>
       </div>

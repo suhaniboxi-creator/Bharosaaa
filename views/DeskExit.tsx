@@ -76,6 +76,20 @@ export const DeskExit: React.FC<DeskExitProps> = ({ onDeactivate, registeredPilg
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300">
                     <i className="fas fa-qrcode text-2xl"></i>
                   </div>
+                  
+                  {/* Progress Bar */}
+                  <div className="absolute -bottom-2 left-4 right-4 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <AnimatePresence>
+                      {status === 'SCANNING' && (
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: '100%' }}
+                          transition={{ duration: 0.8, ease: "easeInOut" }}
+                          className="h-full bg-red-500"
+                        />
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
               </div>
             </div>
@@ -119,13 +133,38 @@ export const DeskExit: React.FC<DeskExitProps> = ({ onDeactivate, registeredPilg
                   <i className="fas fa-check"></i>
                 </div>
                 <div>
-                  <h3 className="text-3xl font-black italic tracking-tighter uppercase">Journey Finalized</h3>
+                  <h3 className="text-3xl font-black italic tracking-tighter uppercase leading-tight">Journey Finalized</h3>
                   <p className="text-white/80 font-bold uppercase tracking-widest text-[10px] mt-2">Scarf ID: {lastPilgrim.qrValue}</p>
                 </div>
-                <div className="bg-white/10 p-6 rounded-3xl w-full">
-                  <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-2">Pilgrim Details</p>
-                  <p className="text-xl font-black italic">{lastPilgrim.name}</p>
-                  <p className="text-xs font-bold opacity-80 mt-1">{lastPilgrim.auraPoints} Aura Points Earned</p>
+                <div className="bg-white/10 p-6 rounded-3xl w-full space-y-4">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Pilgrim</p>
+                    <p className="text-xl font-black italic">{lastPilgrim.name}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/10 p-3 rounded-2xl">
+                      <p className="text-[8px] font-black uppercase tracking-widest opacity-60">Aura Earned</p>
+                      <p className="text-lg font-black italic">+{lastPilgrim.auraPoints}</p>
+                    </div>
+                    <div className="bg-white/10 p-3 rounded-2xl">
+                      <p className="text-[8px] font-black uppercase tracking-widest opacity-60">Age / Gender</p>
+                      <p className="text-lg font-black italic">{lastPilgrim.age} / {lastPilgrim.gender[0]}</p>
+                    </div>
+                  </div>
+
+                  {lastPilgrim.badges && lastPilgrim.badges.length > 0 && (
+                    <div className="pt-2">
+                      <p className="text-[8px] font-black uppercase tracking-widest opacity-60 mb-2">Divine Badges Earned</p>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {lastPilgrim.badges.map((badge, i) => (
+                          <span key={i} className="px-3 py-1 bg-white/20 rounded-full text-[9px] font-black uppercase tracking-widest">
+                            {badge}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             ) : status === 'ERROR' ? (

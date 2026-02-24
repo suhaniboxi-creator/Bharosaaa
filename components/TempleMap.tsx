@@ -47,10 +47,26 @@ export const TempleMap: React.FC<TempleMapProps> = ({ themeColor, assignedGate =
   const [userPos, setUserPos] = useState({ x: 60, y: 340 });
   const [proximityHeritage, setProximityHeritage] = useState<Point | null>(null);
   const [isRerouted, setIsRerouted] = useState(false);
+  const [points, setPoints] = useState<Point[]>(KASHI_POINTS);
+
+  // Simulate real-time congestion updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPoints(prev => prev.map(p => {
+        // Randomly change congestion for 2-3 points
+        if (Math.random() > 0.8) {
+          const levels: ('low' | 'moderate' | 'high')[] = ['low', 'moderate', 'high'];
+          return { ...p, congestion: levels[Math.floor(Math.random() * levels.length)] };
+        }
+        return p;
+      }));
+    }, 30000); // 30 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   // Proximity Detection for Heritage
   useEffect(() => {
-    const heritagePoints = KASHI_POINTS.filter(p => p.type === 'heritage');
+    const heritagePoints = points.filter(p => p.type === 'heritage');
     const nearby = heritagePoints.find(p => {
       const dist = Math.sqrt(Math.pow(p.x - userPos.x, 2) + Math.pow(p.y - userPos.y, 2));
       return dist < 40;
@@ -64,17 +80,17 @@ export const TempleMap: React.FC<TempleMapProps> = ({ themeColor, assignedGate =
     } else if (!nearby) {
       setProximityHeritage(null);
     }
-  }, [userPos]);
+  }, [userPos, points]);
 
   // Dynamic Rerouting Logic
   useEffect(() => {
-    const gate = KASHI_POINTS.find(p => p.id === assignedGate);
-    const security = KASHI_POINTS.find(p => p.id === 'security');
+    const gate = points.find(p => p.id === assignedGate);
+    const security = points.find(p => p.id === 'security');
     
     if ((gate?.congestion === 'high' || security?.congestion === 'high') && !isRerouted) {
       setIsRerouted(true);
     }
-  }, [assignedGate]);
+  }, [assignedGate, points]);
 
   // Simulate movement
   useEffect(() => {
@@ -82,7 +98,7 @@ export const TempleMap: React.FC<TempleMapProps> = ({ themeColor, assignedGate =
       const interval = setInterval(() => {
         setUserPos(prev => {
           const targetId = sosActive ? 'exit' : 'sanctum';
-          const target = KASHI_POINTS.find(p => p.id === targetId)!;
+          const target = points.find(p => p.id === targetId)!;
           const dx = target.x - prev.x;
           const dy = target.y - prev.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
@@ -98,7 +114,7 @@ export const TempleMap: React.FC<TempleMapProps> = ({ themeColor, assignedGate =
       }, 100);
       return () => clearInterval(interval);
     }
-  }, [isNavigating, sosActive]);
+  }, [isNavigating, sosActive, points]);
 
   const congestionColor = (level: string) => {
     switch (level) {
@@ -111,15 +127,15 @@ export const TempleMap: React.FC<TempleMapProps> = ({ themeColor, assignedGate =
 
   const navigationPath = useMemo(() => {
     const start = userPos;
-    let gate = KASHI_POINTS.find(p => p.id === assignedGate) || KASHI_POINTS[0];
-    let security = KASHI_POINTS.find(p => p.id === 'security')!;
-    const waiting = KASHI_POINTS.find(p => p.id === 'waiting')!;
-    const sanctum = KASHI_POINTS.find(p => p.id === 'sanctum')!;
+    let gate = points.find(p => p.id === assignedGate) || points[0];
+    let security = points.find(p => p.id === 'security')!;
+    const waiting = points.find(p => p.id === 'waiting')!;
+    const sanctum = points.find(p => p.id === 'sanctum')!;
 
     // If rerouted, bypass high congestion points
     if (isRerouted) {
       // Find a low congestion gate instead
-      const altGate = KASHI_POINTS.find(p => p.type === 'gate' && p.congestion === 'low' && p.id !== 'exit') || gate;
+      const altGate = points.find(p => p.type === 'gate' && p.congestion === 'low' && p.id !== 'exit') || gate;
       gate = altGate;
       // If security is high, we might suggest a direct path to a utility point first or a different check
       // For simulation, we'll just adjust the path to look "different" and avoid the security node visually
@@ -127,14 +143,14 @@ export const TempleMap: React.FC<TempleMapProps> = ({ themeColor, assignedGate =
     }
     
     return `M ${start.x} ${start.y} L ${gate.x} ${gate.y} L ${security.x} ${security.y} L ${waiting.x} ${waiting.y} L ${sanctum.x} ${sanctum.y}`;
-  }, [userPos, assignedGate, isRerouted]);
+  }, [userPos, assignedGate, isRerouted, points]);
 
   const sosPath = useMemo(() => {
     const start = userPos;
-    const medical = KASHI_POINTS.find(p => p.id === 'sos-1')!;
-    const exit = KASHI_POINTS.find(p => p.id === 'exit')!;
+    const medical = points.find(p => p.id === 'sos-1')!;
+    const exit = points.find(p => p.id === 'exit')!;
     return `M ${start.x} ${start.y} L ${medical.x} ${medical.y} L ${exit.x} ${exit.y}`;
-  }, [userPos]);
+  }, [userPos, points]);
 
   return (
     <div className="bg-[#FFFDF5] dark:bg-slate-950 rounded-[3.5rem] p-8 shadow-2xl border border-[#FDE68A] dark:border-white/5 overflow-hidden relative">
@@ -232,7 +248,7 @@ export const TempleMap: React.FC<TempleMapProps> = ({ themeColor, assignedGate =
               exit={{ opacity: 0 }}
               className="absolute inset-0 z-0 pointer-events-none"
             >
-              {KASHI_POINTS.filter(p => p.congestion === 'high').map(p => (
+              {points.filter(p => p.congestion === 'high').map(p => (
                 <div 
                   key={`heat-${p.id}`}
                   className="absolute rounded-full blur-3xl animate-pulse"
@@ -302,7 +318,7 @@ export const TempleMap: React.FC<TempleMapProps> = ({ themeColor, assignedGate =
           </AnimatePresence>
 
           {/* Points of Interest */}
-          {KASHI_POINTS.map((pt) => {
+          {points.map((pt) => {
             const isAssigned = pt.id === assignedGate;
             return (
               <g 

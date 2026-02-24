@@ -224,9 +224,9 @@ const App: React.FC = () => {
           onLogout={logout}
           t={t}
         >
-          {activeTab === 'registration' && <Registration onRegister={handleRegister} onScan={handleScan} registeredPilgrims={pilgrims} t={t} currentTemple={currentTemple} />}
+          {activeTab === 'registration' && <Registration onRegister={handleRegister} onScan={handleScan} registeredPilgrims={pilgrims} t={t} currentTemple={currentTemple} currentRole={currentRole} />}
           {activeTab === 'dashboard' && <Dashboard alerts={alerts} onUpdateAlert={handleUpdateAlert} t={t} currentTemple={currentTemple} />}
-          {activeTab === 'ledger' && <Ledger transactions={transactions} t={t} currentTemple={currentTemple} />}
+          {activeTab === 'ledger' && <Ledger transactions={transactions} pilgrims={pilgrims} t={t} currentTemple={currentTemple} />}
           {activeTab === 'desk-exit' && <DeskExit onDeactivate={handleDeactivate} registeredPilgrims={pilgrims} t={t} currentTemple={currentTemple} />}
           {activeTab === 'pilgrim-map' && <PilgrimMap registeredPilgrims={pilgrims} onSendSOS={handleSendSOS} t={t} currentTemple={currentTemple} />}
           {activeTab === 'pilgrim-quests' && <PilgrimQuests registeredPilgrims={pilgrims} t={t} currentTemple={currentTemple} />}

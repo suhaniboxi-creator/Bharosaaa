@@ -1,21 +1,46 @@
 
 import React, { useState } from 'react';
-import { Transaction, Temple } from '../types';
+import { Transaction, Temple, Pilgrim } from '../types';
 
 interface LedgerProps {
   transactions: Transaction[];
+  pilgrims: Pilgrim[];
   currentTemple?: Temple;
   t: (key: any) => string;
 }
 
-export const Ledger: React.FC<LedgerProps> = ({ transactions, currentTemple, t }) => {
+export const Ledger: React.FC<LedgerProps> = ({ transactions, pilgrims, currentTemple, t }) => {
   const [filter, setFilter] = useState<'ALL' | 'ENTRY' | 'EXIT' | 'DONATION' | 'VIP_ENTRY' | 'EMERGENCY_SOS'>('ALL');
 
   const filtered = transactions.filter(t => filter === 'ALL' || t.type === filter);
   const themePrimary = currentTemple?.themeColor || '#F97316';
 
+  const activeScarves = pilgrims.filter(p => p.status === 'CHECKED_IN');
+  const colorCounts = activeScarves.reduce((acc, p) => {
+    acc[p.colorCode] = (acc[p.colorCode] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      {/* Active Scarves Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { color: 'RED', hex: '#ef4444' },
+          { color: 'ORANGE', hex: '#f97316' },
+          { color: 'YELLOW', hex: '#eab308' },
+          { color: 'BROWN', hex: '#78350f' },
+        ].map(c => (
+          <div key={c.color} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-white/5 flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: c.hex }}></div>
+            <div>
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{c.color} Active</p>
+              <p className="text-lg font-black dark:text-white leading-none">{colorCounts[c.color] || 0}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
       <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-200 dark:border-white/5 flex flex-wrap gap-4 items-center shadow-sm transition-colors duration-300">
         <div className="flex items-center gap-3 mr-4">
            <i className="fas fa-layer-group text-slate-400"></i>

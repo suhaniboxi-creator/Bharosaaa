@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Pilgrim, ColorCode, Temple } from '../types';
+import { Pilgrim, ColorCode, Temple, UserRole } from '../types';
 import { generateID } from '../utils/crypto';
 import { Scanner } from './Scanner';
 
@@ -10,9 +10,10 @@ interface RegistrationProps {
   registeredPilgrims: Pilgrim[];
   t: (key: any) => string;
   currentTemple?: Temple;
+  currentRole: UserRole;
 }
 
-export const Registration: React.FC<RegistrationProps> = ({ onRegister, onScan, registeredPilgrims, t, currentTemple }) => {
+export const Registration: React.FC<RegistrationProps> = ({ onRegister, onScan, registeredPilgrims, t, currentTemple, currentRole }) => {
   const [formData, setFormData] = useState({
     name: '',
     age: '',
@@ -27,9 +28,9 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onScan, 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const colorMap: Record<string, ColorCode> = {
-      '08:00 AM': 'RED', '09:00 AM': 'BLUE', '10:00 AM': 'GREEN', '11:00 AM': 'ORANGE'
+      '08:00 AM': 'RED', '09:00 AM': 'ORANGE', '10:00 AM': 'YELLOW', '11:00 AM': 'BROWN'
     };
-    const colorCode = colorMap[formData.slotTime] || 'GREEN';
+    const colorCode = colorMap[formData.slotTime] || 'RED';
     const shortColor = colorCode.substring(0, 2);
     const randomId = Math.floor(10000 + Math.random() * 90000);
     const qrValue = `KV-${formData.deskId}-${shortColor}${randomId}`;
@@ -62,19 +63,21 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onScan, 
 
   return (
     <div className="space-y-12">
-      {/* Integrated Scanner for Desk Entry */}
-      <div className="bg-slate-900 dark:bg-slate-900/50 p-8 rounded-[3.5rem] shadow-2xl border border-white/5">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-orange-500 flex items-center justify-center text-white shadow-lg">
-            <i className="fas fa-qrcode"></i>
+      {/* Integrated Scanner for Desk Entry - Only for Staff/Admin */}
+      {(currentRole === 'ADMIN' || currentRole === 'REGISTERER') && (
+        <div className="bg-slate-900 dark:bg-slate-900/50 p-8 rounded-[3.5rem] shadow-2xl border border-white/5">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-12 h-12 rounded-2xl bg-orange-500 flex items-center justify-center text-white shadow-lg">
+              <i className="fas fa-qrcode"></i>
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-white italic tracking-tight">Optical Scarf Validation</h3>
+              <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Instant Check-in for Registered Pilgrims</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-xl font-black text-white italic tracking-tight">Optical Scarf Validation</h3>
-            <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Instant Check-in for Registered Pilgrims</p>
-          </div>
+          <Scanner onScan={onScan} registeredPilgrims={registeredPilgrims} currentTemple={currentTemple} t={t} />
         </div>
-        <Scanner onScan={onScan} registeredPilgrims={registeredPilgrims} currentTemple={currentTemple} t={t} />
-      </div>
+      )}
 
       <div className="grid md:grid-cols-2 gap-10">
         <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] shadow-xl dark:shadow-none border border-slate-100 dark:border-white/5 flex flex-col h-full transition-colors duration-300">
