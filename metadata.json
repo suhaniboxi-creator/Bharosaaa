@@ -1,6 +1,6 @@
 {
-  "name": "Copy of BHAROSA - Smart Temple Management",
-  "description": "An integrated Smart Scarf ecosystem for crowd management, blockchain-based verification, and pilgrim engagement.",
+  "name": "BHAROSA - Kashi Vishwanath Smart Management",
+  "description": "Smart Scarf ecosystem for Kashi Vishwanath Temple crowd management and pilgrim engagement.",
   "requestFramePermissions": [
     "camera"
   ]

@@ -1,28 +1,53 @@
 
 import React, { useState } from 'react';
-import { Transaction, Temple } from '../types';
+import { Transaction, Temple, Pilgrim } from '../types';
 
 interface LedgerProps {
   transactions: Transaction[];
+  pilgrims: Pilgrim[];
   currentTemple?: Temple;
   t: (key: any) => string;
 }
 
-export const Ledger: React.FC<LedgerProps> = ({ transactions, currentTemple, t }) => {
-  const [filter, setFilter] = useState<'ALL' | 'ENTRY' | 'DONATION' | 'VIP_ENTRY' | 'EMERGENCY_SOS'>('ALL');
+export const Ledger: React.FC<LedgerProps> = ({ transactions, pilgrims, currentTemple, t }) => {
+  const [filter, setFilter] = useState<'ALL' | 'ENTRY' | 'EXIT' | 'DONATION' | 'VIP_ENTRY' | 'EMERGENCY_SOS'>('ALL');
 
   const filtered = transactions.filter(t => filter === 'ALL' || t.type === filter);
   const themePrimary = currentTemple?.themeColor || '#F97316';
 
+  const activeScarves = pilgrims.filter(p => p.status === 'CHECKED_IN');
+  const colorCounts = activeScarves.reduce((acc, p) => {
+    acc[p.colorCode] = (acc[p.colorCode] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      {/* Active Scarves Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { color: 'RED', hex: '#ef4444' },
+          { color: 'ORANGE', hex: '#f97316' },
+          { color: 'YELLOW', hex: '#eab308' },
+          { color: 'BROWN', hex: '#78350f' },
+        ].map(c => (
+          <div key={c.color} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-white/5 flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: c.hex }}></div>
+            <div>
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{c.color} Active</p>
+              <p className="text-lg font-black dark:text-white leading-none">{colorCounts[c.color] || 0}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
       <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-200 dark:border-white/5 flex flex-wrap gap-4 items-center shadow-sm transition-colors duration-300">
         <div className="flex items-center gap-3 mr-4">
            <i className="fas fa-layer-group text-slate-400"></i>
            <span className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight">Immutable Chain</span>
         </div>
         <div className="flex flex-wrap gap-2">
-          {['ALL', 'ENTRY', 'DONATION', 'EMERGENCY_SOS'].map(f => (
+          {['ALL', 'ENTRY', 'EXIT', 'DONATION', 'EMERGENCY_SOS'].map(f => (
             <button
               key={f}
               onClick={() => setFilter(f as any)}
@@ -59,12 +84,16 @@ export const Ledger: React.FC<LedgerProps> = ({ transactions, currentTemple, t }
             >
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${
                 tx.type === 'ENTRY' ? 'bg-blue-500/10 text-blue-500' :
-                tx.type === 'EMERGENCY_SOS' ? 'bg-red-500/10 text-red-500' :
+                tx.type === 'EXIT' ? 'bg-red-500/10 text-red-500' :
+                tx.type === 'EMERGENCY_SOS' ? 'bg-rose-500/10 text-rose-500' :
+                tx.type === 'DONATION' ? 'bg-emerald-500/10 text-emerald-500' :
                 'bg-green-500/10 text-green-500'
               }`}>
                 <i className={`fas ${
                   tx.type === 'ENTRY' ? 'fa-user-check' :
+                  tx.type === 'EXIT' ? 'fa-door-open' :
                   tx.type === 'EMERGENCY_SOS' ? 'fa-triangle-exclamation' :
+                  tx.type === 'DONATION' ? 'fa-hand-holding-heart' :
                   'fa-shield-halved'
                 } text-2xl`}></i>
               </div>

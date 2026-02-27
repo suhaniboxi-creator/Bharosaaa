@@ -67,7 +67,7 @@ export const Login: React.FC<LoginProps> = ({ onSelectRole, currentTemple, t, is
                 <i className="fas fa-hands-praying"></i>
               </div>
               <h3 className="text-4xl font-black mb-4 relative z-10 italic tracking-tighter">Enter Sacred Path</h3>
-              <p className="text-slate-400 font-medium mb-12 text-sm max-w-xs mx-auto relative z-10">Instant synchronization with your smart scarf. No manual ID entry required for this prototype.</p>
+              <p className="text-slate-400 font-medium mb-12 text-sm max-w-xs mx-auto relative z-10">Instant synchronization with your smart scarf. Register or Login to your pilgrimage journey.</p>
               <div className="inline-flex items-center gap-4 px-10 py-5 bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-2xl font-black text-sm shadow-2xl group-hover:px-16 transition-all relative z-10">
                 ACTIVATE PORTAL <i className="fas fa-bolt animate-pulse"></i>
               </div>
@@ -105,6 +105,13 @@ export const Login: React.FC<LoginProps> = ({ onSelectRole, currentTemple, t, is
                 >
                   <i className="fas fa-id-card-clip text-4xl mb-6 text-slate-400 group-hover:text-inherit transition-colors"></i>
                   <h4 className="font-black text-sm uppercase tracking-widest">Desk Entry</h4>
+                </button>
+                <button 
+                  onClick={() => handleStaffLogin('EXIT_OFFICER')}
+                  className="p-10 rounded-[2.5rem] bg-slate-50 dark:bg-slate-800 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 transition-all text-center group border border-slate-100 dark:border-white/5 shadow-sm"
+                >
+                  <i className="fas fa-door-open text-4xl mb-6 text-slate-400 group-hover:text-inherit transition-colors"></i>
+                  <h4 className="font-black text-sm uppercase tracking-widest">Desk Exit</h4>
                 </button>
               </div>
             </div>

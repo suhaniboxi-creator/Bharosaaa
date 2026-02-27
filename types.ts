@@ -1,8 +1,8 @@
 
-export type ColorCode = 'RED' | 'BLUE' | 'GREEN' | 'ORANGE';
+export type ColorCode = 'RED' | 'ORANGE' | 'YELLOW' | 'BROWN';
 export type AlertStatus = 'ACTIVE' | 'EN_ROUTE' | 'RESOLVED';
 export type Language = 'EN' | 'HI' | 'TE';
-export type UserRole = 'ADMIN' | 'REGISTERER' | 'PILGRIM' | 'NONE';
+export type UserRole = 'ADMIN' | 'REGISTERER' | 'EXIT_OFFICER' | 'PILGRIM' | 'NONE';
 
 export interface Temple {
   id: string;
@@ -36,13 +36,14 @@ export interface Pilgrim {
   auraPoints: number;
   badges: string[];
   completedQuests: string[];
+  assignedGate?: string;
 }
 
 export interface Transaction {
   id: string;
   hash: string;
   timestamp: number;
-  type: 'ENTRY' | 'DONATION' | 'VIP_ENTRY' | 'EMERGENCY_SOS' | 'EMERGENCY_ACTION';
+  type: 'ENTRY' | 'EXIT' | 'DONATION' | 'VIP_ENTRY' | 'EMERGENCY_SOS' | 'EMERGENCY_ACTION';
   details: string;
   userId: string;
   templeId: string;
