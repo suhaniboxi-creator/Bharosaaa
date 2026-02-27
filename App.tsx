@@ -5,17 +5,26 @@ import { Registration } from './views/Registration';
 import { Scanner } from './views/Scanner';
 import { Dashboard } from './views/Dashboard';
 import { Ledger } from './views/Ledger';
-import { PilgrimKiosk } from './views/PilgrimKiosk';
+import { DeskExit } from './views/DeskExit';
+import { PilgrimMap } from './views/PilgrimMap';
+import { PilgrimQuests } from './views/PilgrimQuests';
+import { PilgrimRituals } from './views/PilgrimRituals';
+import { PilgrimQuiz } from './views/PilgrimQuiz';
+import { PilgrimLeaderboard } from './views/PilgrimLeaderboard';
+import { PilgrimServices } from './views/PilgrimServices';
 import { Login } from './views/Login';
 import { Pilgrim, Transaction, EmergencyAlert, AlertStatus, Language, Temple, UserRole } from './types';
 import { generateHash, generateID } from './utils/crypto';
 import { translations } from './utils/i18n';
 
-const TEMPLES: Temple[] = [
-  { id: 'T1', name: 'Kashi Vishwanath', location: 'Varanasi', themeColor: '#F97316', secondaryColor: '#991B1B', icon: 'fa-om' },
-  { id: 'T2', name: 'Tirupati Balaji', location: 'Tirumala', themeColor: '#B45309', secondaryColor: '#78350F', icon: 'fa-dharmachakra' },
-  { id: 'T3', name: 'Somnath Temple', location: 'Gujarat', themeColor: '#0369A1', secondaryColor: '#075985', icon: 'fa-gopuram' },
-];
+const KASHI_VISHWANATH: Temple = { 
+  id: 'T1', 
+  name: 'Kashi Vishwanath', 
+  location: 'Varanasi', 
+  themeColor: '#F97316', 
+  secondaryColor: '#991B1B', 
+  icon: 'fa-om' 
+};
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('registration');
@@ -24,12 +33,22 @@ const App: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [alerts, setAlerts] = useState<EmergencyAlert[]>([]);
   const [language, setLanguage] = useState<Language>('EN');
-  const [currentTemple, setCurrentTemple] = useState<Temple>(TEMPLES[0]);
+  const [currentTemple] = useState<Temple>(KASHI_VISHWANATH);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   const t = (key: keyof typeof translations['EN']) => translations[language][key] || key;
 
   useEffect(() => {
+    // Handle automatic login via QR code link
+    const urlParams = new URLSearchParams(window.location.search);
+    const pilgrimId = urlParams.get('id');
+    if (pilgrimId) {
+      setCurrentRole('PILGRIM');
+      setActiveTab('pilgrim-map');
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     const dummyPilgrim: Pilgrim = {
       id: 'BHR-9921',
       name: 'Rahul Sharma',
@@ -38,7 +57,7 @@ const App: React.FC = () => {
       groupSize: 4,
       slotTime: '08:00 AM',
       colorCode: 'RED',
-      qrValue: 'BHAROSA-DEMO-RAHUL',
+      qrValue: 'KV-GATEA-OR10001',
       status: 'PENDING',
       auraPoints: 120,
       badges: ['First Devotion'],
@@ -51,7 +70,7 @@ const App: React.FC = () => {
       hash: generateHash('GENESIS'),
       timestamp: Date.now() - 3600000,
       type: 'ENTRY',
-      details: 'System Genesis - Multi-Temple Sync Active',
+      details: 'System Genesis - Kashi Vishwanath Node Active',
       userId: 'SYSTEM',
       templeId: currentTemple.id
     }]);
@@ -64,11 +83,27 @@ const App: React.FC = () => {
       hash: generateHash(`REG-${newPilgrim.id}`),
       timestamp: Date.now(),
       type: 'ENTRY',
-      details: `Pilgrim ${newPilgrim.name} registered at ${currentTemple.name}`,
+      details: `Pilgrim ${newPilgrim.name} registered at ${currentTemple.name} (${newPilgrim.assignedGate})`,
       userId: newPilgrim.id,
       templeId: currentTemple.id
     };
-    setTransactions(prev => [...prev, tx]);
+    
+    const newTransactions = [tx];
+    
+    // If pilgrim has initial aura from donation
+    if (newPilgrim.auraPoints > 0) {
+      newTransactions.push({
+        id: generateID(),
+        hash: generateHash(`DON-${newPilgrim.id}`),
+        timestamp: Date.now(),
+        type: 'DONATION',
+        details: `Initial donation of ₹${newPilgrim.auraPoints * 10} by ${newPilgrim.name}`,
+        userId: newPilgrim.id,
+        templeId: currentTemple.id
+      });
+    }
+    
+    setTransactions(prev => [...prev, ...newTransactions]);
   };
 
   const handleSendSOS = (pilgrim: Pilgrim) => {
@@ -127,13 +162,45 @@ const App: React.FC = () => {
     return false;
   };
 
+  const handleDeactivate = async (qrValue: string): Promise<boolean> => {
+    await new Promise(r => setTimeout(r, 800));
+    const pilgrim = pilgrims.find(p => p.qrValue === qrValue && p.status === 'CHECKED_IN');
+    if (pilgrim) {
+      setPilgrims(prev => prev.map(p => p.qrValue === qrValue ? { ...p, status: 'COMPLETED' } : p));
+      setTransactions(prev => [...prev, {
+        id: generateID(),
+        hash: generateHash(`EXIT-${pilgrim.id}`),
+        timestamp: Date.now(),
+        type: 'EXIT',
+        details: `${pilgrim.name} journey completed at ${currentTemple.name}. Scarf deactivated at Exit Desk.`,
+        userId: pilgrim.id,
+        templeId: currentTemple.id
+      }]);
+      return true;
+    }
+    return false;
+  };
+
   const logout = () => {
     setCurrentRole('NONE');
     setActiveTab('registration');
   };
 
+  const handleLogin = (role: UserRole) => {
+    setCurrentRole(role);
+    if (role === 'PILGRIM') {
+      setActiveTab('registration');
+    } else if (role === 'ADMIN') {
+      setActiveTab('dashboard');
+    } else if (role === 'EXIT_OFFICER') {
+      setActiveTab('desk-exit');
+    } else {
+      setActiveTab('registration');
+    }
+  };
+
   if (currentRole === 'NONE') {
-    return <Login onSelectRole={setCurrentRole} currentTemple={currentTemple} t={t} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} />;
+    return <Login onSelectRole={handleLogin} currentTemple={currentTemple} t={t} isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)} />;
   }
 
   return (
@@ -150,20 +217,23 @@ const App: React.FC = () => {
           setActiveTab={setActiveTab} 
           language={language} 
           setLanguage={setLanguage}
-          temples={TEMPLES}
           currentTemple={currentTemple}
-          setCurrentTemple={setCurrentTemple}
           isDarkMode={isDarkMode}
           toggleDarkMode={() => setIsDarkMode(!isDarkMode)}
           currentRole={currentRole}
           onLogout={logout}
           t={t}
         >
-          {activeTab === 'registration' && <Registration onRegister={handleRegister} t={t} currentTemple={currentTemple} />}
-          {activeTab === 'scanner' && <Scanner onScan={handleScan} registeredPilgrims={pilgrims} t={t} currentTemple={currentTemple} />}
+          {activeTab === 'registration' && <Registration onRegister={handleRegister} onScan={handleScan} registeredPilgrims={pilgrims} t={t} currentTemple={currentTemple} currentRole={currentRole} />}
           {activeTab === 'dashboard' && <Dashboard alerts={alerts} onUpdateAlert={handleUpdateAlert} t={t} currentTemple={currentTemple} />}
-          {activeTab === 'ledger' && <Ledger transactions={transactions} t={t} currentTemple={currentTemple} />}
-          {activeTab === 'kiosk' && <PilgrimKiosk registeredPilgrims={pilgrims} onSendSOS={handleSendSOS} t={t} currentTemple={currentTemple} />}
+          {activeTab === 'ledger' && <Ledger transactions={transactions} pilgrims={pilgrims} t={t} currentTemple={currentTemple} />}
+          {activeTab === 'desk-exit' && <DeskExit onDeactivate={handleDeactivate} registeredPilgrims={pilgrims} t={t} currentTemple={currentTemple} />}
+          {activeTab === 'pilgrim-map' && <PilgrimMap registeredPilgrims={pilgrims} onSendSOS={handleSendSOS} t={t} currentTemple={currentTemple} />}
+          {activeTab === 'pilgrim-quests' && <PilgrimQuests registeredPilgrims={pilgrims} t={t} currentTemple={currentTemple} />}
+          {activeTab === 'pilgrim-rituals' && <PilgrimRituals registeredPilgrims={pilgrims} t={t} currentTemple={currentTemple} />}
+          {activeTab === 'pilgrim-quiz' && <PilgrimQuiz registeredPilgrims={pilgrims} t={t} currentTemple={currentTemple} />}
+          {activeTab === 'pilgrim-services' && <PilgrimServices registeredPilgrims={pilgrims} t={t} currentTemple={currentTemple} />}
+          {activeTab === 'pilgrim-rank' && <PilgrimLeaderboard registeredPilgrims={pilgrims} t={t} currentTemple={currentTemple} />}
         </Layout>
       </div>
     </div>

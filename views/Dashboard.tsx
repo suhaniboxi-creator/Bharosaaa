@@ -40,6 +40,48 @@ export const Dashboard: React.FC<DashboardProps> = ({ alerts, onUpdateAlert, t, 
         ))}
       </div>
 
+      {/* Predictive AI Model Section */}
+      <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] shadow-sm border border-slate-100 dark:border-white/5 transition-colors duration-300">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-indigo-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
+              <i className="fas fa-brain"></i>
+            </div>
+            <div>
+              <h3 className="text-xl font-black dark:text-white italic tracking-tight">Predictive AI Crowd Model</h3>
+              <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Real-time Density & Route Optimization</p>
+            </div>
+          </div>
+          <div className="px-4 py-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl border border-indigo-100 dark:border-indigo-500/20">
+            <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Model Confidence: 98.4%</span>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-4 gap-6">
+          {[
+            { color: 'RED', label: 'Red Scarf Route', route: 'Gate 1 → Corridor A → Sanctum', status: 'Optimal', colorHex: '#ef4444' },
+            { color: 'ORANGE', label: 'Orange Scarf Route', route: 'Gate 2 → Corridor B → Sanctum', status: 'Moderate', colorHex: '#f97316' },
+            { color: 'YELLOW', label: 'Yellow Scarf Route', route: 'Gate 3 → Corridor C → Sanctum', status: 'High Density', colorHex: '#eab308' },
+            { color: 'BROWN', label: 'Brown Scarf Route', route: 'Gate 1 → Corridor D → Sanctum', status: 'Optimal', colorHex: '#78350f' },
+          ].map((item) => (
+            <div key={item.color} className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-white/5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: item.colorHex }}></div>
+                <span className="text-xs font-black dark:text-white uppercase tracking-widest">{item.label}</span>
+              </div>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">AI Suggested Route</p>
+              <p className="text-sm font-black text-slate-800 dark:text-slate-200 italic mb-4">{item.route}</p>
+              <div className={`inline-block px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${
+                item.status === 'Optimal' ? 'bg-green-500/10 text-green-500' : 
+                item.status === 'Moderate' ? 'bg-yellow-500/10 text-yellow-500' : 'bg-red-500/10 text-red-500'
+              }`}>
+                {item.status}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-8 rounded-[2rem] shadow-sm border border-slate-100 dark:border-white/5 flex flex-col transition-colors duration-300 min-h-[450px]">
           <div className="flex items-center justify-between mb-8">
