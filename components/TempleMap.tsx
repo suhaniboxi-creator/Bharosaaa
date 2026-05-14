@@ -1,425 +1,242 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface Point {
-  id: string;
-  x: number;
-  y: number;
-  label: string;
-  icon: string;
-  type: 'gate' | 'queue' | 'sanctum' | 'emergency' | 'utility' | 'security' | 'donation' | 'heritage';
-  color: string;
-  congestion: 'low' | 'moderate' | 'high';
-  description?: string;
-  fact?: string;
+  id: string; x: number; y: number; label: string; icon: string;
+  type: 'entry' | 'exit' | 'helpdesk' | 'viewpoint' | 'visit' | 'facility' | 'security' | 'smart' | 'sanctum';
+  color: string; congestion: 'low' | 'moderate' | 'high'; description?: string; fact?: string;
 }
 
 const KASHI_POINTS: Point[] = [
-  { id: 'gate-1', x: 50, y: 350, label: 'Gate 1: Main Corridor', icon: 'fa-door-open', type: 'gate', color: '#F97316', congestion: 'high', description: 'The grand entrance from the river side.' },
-  { id: 'gate-2', x: 350, y: 350, label: 'Gate 2: Secondary Entry', icon: 'fa-door-open', type: 'gate', color: '#F97316', congestion: 'low', description: 'Faster entry for local pilgrims.' },
-  { id: 'gate-3', x: 200, y: 380, label: 'Gate 3: Surge Control', icon: 'fa-door-open', type: 'gate', color: '#F97316', congestion: 'moderate', description: 'Opened during peak festival hours.' },
-  { id: 'gate-vip', x: 20, y: 200, label: 'VIP Entry Gate', icon: 'fa-crown', type: 'gate', color: '#EAB308', congestion: 'low', description: 'Priority access for special permits.' },
-  { id: 'security', x: 100, y: 300, label: 'Security Check', icon: 'fa-shield-halved', type: 'security', color: '#64748b', congestion: 'high' },
-  { id: 'waiting', x: 200, y: 250, label: 'Waiting Area', icon: 'fa-chair', type: 'queue', color: '#94a3b8', congestion: 'moderate' },
-  { id: 'sanctum', x: 200, y: 80, label: 'Garbhagriha (Sanctum)', icon: 'fa-om', type: 'sanctum', color: '#F97316', congestion: 'high', description: 'The sacred heart of the temple.' },
-  { id: 'donation', x: 300, y: 150, label: 'Donation Area', icon: 'fa-hand-holding-heart', type: 'donation', color: '#10b981', congestion: 'low' },
-  { id: 'exit', x: 380, y: 100, label: 'Exit Gate', icon: 'fa-door-closed', type: 'gate', color: '#ef4444', congestion: 'low' },
-  { id: 'sos-1', x: 50, y: 100, label: 'Medical Point', icon: 'fa-truck-medical', type: 'emergency', color: '#dc2626', congestion: 'low' },
-  { id: 'water-1', x: 320, y: 250, label: 'Drinking Water', icon: 'fa-faucet-drip', type: 'utility', color: '#3b82f6', congestion: 'low' },
-  { id: 'rest-1', x: 80, y: 180, label: 'Rest Zone', icon: 'fa-couch', type: 'utility', color: '#8b5cf6', congestion: 'low' },
-  { id: 'heritage-1', x: 150, y: 150, label: 'Ancient Pillar', icon: 'fa-monument', type: 'heritage', color: '#b45309', congestion: 'low', description: 'A 1000-year old stone carving with sacred geometry.', fact: 'This pillar was carved from a single block of Chunar sandstone and depicts the 12 Jyotirlingas.' },
-  { id: 'heritage-2', x: 280, y: 80, label: 'Golden Spire View', icon: 'fa-sun', type: 'heritage', color: '#b45309', congestion: 'low', description: 'Best spot to view the 15.5m high golden spire.', fact: 'The spire is plated with 800kg of pure gold, donated by Maharaja Ranjit Singh.' },
-  { id: 'heritage-3', x: 100, y: 50, label: 'Gyanvapi Well', icon: 'fa-faucet', type: 'heritage', color: '#b45309', congestion: 'low', description: 'The Well of Knowledge.', fact: 'Legend says the original Jyotirlinga was hidden in this well during an invasion.' },
+  // Entry Points
+  { id: 'gate-1', x: 50, y: 370, label: 'Gate 1: River Side (Main)', icon: 'fa-door-open', type: 'entry', color: '#F97316', congestion: 'high', description: 'Primary entrance from the Ganga ghats. Highest pilgrim inflow.' },
+  { id: 'gate-2', x: 200, y: 390, label: 'Gate 2: Vishwanath Gali', icon: 'fa-door-open', type: 'entry', color: '#F97316', congestion: 'moderate', description: 'Historic lane entrance through the narrow Vishwanath Gali market.' },
+  { id: 'gate-3', x: 350, y: 370, label: 'Gate 3: Surge Control', icon: 'fa-door-open', type: 'entry', color: '#F97316', congestion: 'low', description: 'Opened during peak festival hours for overflow management.' },
+  { id: 'gate-vip', x: 20, y: 250, label: 'VIP / Divyang Gate', icon: 'fa-crown', type: 'entry', color: '#EAB308', congestion: 'low', description: 'Priority access for VIPs, senior citizens, and Divyang pilgrims.' },
+  // Exit Points
+  { id: 'exit-a', x: 380, y: 80, label: 'Exit Gate A (North)', icon: 'fa-right-from-bracket', type: 'exit', color: '#ef4444', congestion: 'low', description: 'North exit leading to Lahori Tola road.' },
+  { id: 'exit-b', x: 380, y: 200, label: 'Exit Gate B (East)', icon: 'fa-right-from-bracket', type: 'exit', color: '#ef4444', congestion: 'moderate', description: 'East exit near Kashi Vishwanath Corridor promenade.' },
+  // Help Desks
+  { id: 'medical', x: 50, y: 120, label: 'Medical Point', icon: 'fa-truck-medical', type: 'helpdesk', color: '#dc2626', congestion: 'low', description: 'First aid, oxygen, wheelchair, and ambulance services.' },
+  { id: 'lost-found', x: 320, y: 300, label: 'Lost & Found', icon: 'fa-magnifying-glass', type: 'helpdesk', color: '#7c3aed', congestion: 'low', description: 'Report lost items, children, or elderly family members.' },
+  { id: 'senior-help', x: 60, y: 200, label: 'Senior Assistance', icon: 'fa-wheelchair', type: 'helpdesk', color: '#0ea5e9', congestion: 'low', description: 'Wheelchair service, guided assistance for elderly pilgrims.' },
+  // Main Viewpoints
+  { id: 'sanctum', x: 200, y: 80, label: 'Garbhagriha (Sanctum)', icon: 'fa-om', type: 'sanctum', color: '#F97316', congestion: 'high', description: 'The sacred Jyotirlinga — heart of Kashi Vishwanath.', fact: 'One of the 12 Jyotirlingas, believed to be the axis of the universe in Hindu cosmology.' },
+  { id: 'spire-view', x: 280, y: 60, label: 'Golden Spire Deck', icon: 'fa-sun', type: 'viewpoint', color: '#eab308', congestion: 'moderate', description: 'Best vantage point for the 15.5m gold-plated spire.', fact: 'The spire is plated with 800kg of pure gold, donated by Maharaja Ranjit Singh in 1835.' },
+  { id: 'nandi', x: 130, y: 110, label: 'Nandi Mandap', icon: 'fa-cow', type: 'viewpoint', color: '#b45309', congestion: 'moderate', description: 'Sacred Nandi bull statue facing the sanctum.', fact: 'Nandi is the divine vehicle of Lord Shiva and the eternal guardian of the temple.' },
+  // Places to Visit
+  { id: 'gyanvapi', x: 100, y: 50, label: 'Gyanvapi Well', icon: 'fa-water', type: 'visit', color: '#3b82f6', congestion: 'low', description: 'The Well of Knowledge — ancient sacred well.', fact: 'Legend says the original Jyotirlinga was hidden here during Mughal invasions.' },
+  { id: 'kal-bhairav', x: 50, y: 30, label: 'Kal Bhairav Temple', icon: 'fa-fire', type: 'visit', color: '#8b5cf6', congestion: 'low', description: 'Temple of the fierce guardian deity of Kashi.', fact: 'Every visitor to Kashi must first visit Kal Bhairav for divine permission.' },
+  { id: 'annapurna', x: 150, y: 30, label: 'Annapurna Temple', icon: 'fa-bowl-food', type: 'visit', color: '#10b981', congestion: 'low', description: 'Temple of the goddess of nourishment.', fact: 'Ma Annapurna is believed to feed every being in Kashi — no one goes hungry here.' },
+  { id: 'manikarnika', x: 350, y: 30, label: 'Manikarnika Ghat View', icon: 'fa-fire-flame-curved', type: 'visit', color: '#f59e0b', congestion: 'low', description: 'Sacred cremation ghat visible from the corridor.', fact: 'One of the oldest and most sacred cremation ghats, burning continuously for 5000+ years.' },
+  // Facilities
+  { id: 'water-1', x: 300, y: 250, label: 'Drinking Water', icon: 'fa-faucet-drip', type: 'facility', color: '#3b82f6', congestion: 'low', description: 'Free purified drinking water station.' },
+  { id: 'water-2', x: 100, y: 300, label: 'Drinking Water', icon: 'fa-faucet-drip', type: 'facility', color: '#3b82f6', congestion: 'low' },
+  { id: 'rest-1', x: 80, y: 160, label: 'Rest Zone', icon: 'fa-couch', type: 'facility', color: '#8b5cf6', congestion: 'low', description: 'Shaded seating area with fans.' },
+  { id: 'shoe-store', x: 150, y: 350, label: 'Shoe Storage', icon: 'fa-shoe-prints', type: 'facility', color: '#64748b', congestion: 'moderate', description: 'Secure shoe lockers with digital tokens.' },
+  { id: 'prasad', x: 250, y: 150, label: 'Prasad Counter', icon: 'fa-cookie', type: 'facility', color: '#f97316', congestion: 'moderate', description: 'Sacred prasad distribution point.' },
+  { id: 'donation', x: 300, y: 120, label: 'Donation Counter', icon: 'fa-hand-holding-heart', type: 'facility', color: '#10b981', congestion: 'low', description: 'Digital and cash donation facility.' },
+  // Security & Smart Infrastructure
+  { id: 'security-1', x: 120, y: 320, label: 'Security Check', icon: 'fa-shield-halved', type: 'security', color: '#64748b', congestion: 'high', description: 'Bag scan and metal detector checkpoint.' },
+  { id: 'biometric-1', x: 150, y: 280, label: 'Iris Verification', icon: 'fa-eye', type: 'smart', color: '#6366f1', congestion: 'moderate', description: 'Biometric iris scan verification counter.' },
+  { id: 'biometric-2', x: 250, y: 320, label: 'Iris Verification', icon: 'fa-eye', type: 'smart', color: '#6366f1', congestion: 'low' },
+  { id: 'qr-gate-1', x: 170, y: 240, label: 'QR Scan Gate', icon: 'fa-qrcode', type: 'smart', color: '#0ea5e9', congestion: 'moderate', description: 'Automated QR scarf scanner for entry validation.' },
+  { id: 'qr-gate-2', x: 230, y: 240, label: 'QR Scan Gate', icon: 'fa-qrcode', type: 'smart', color: '#0ea5e9', congestion: 'low' },
+  { id: 'crowd-sensor', x: 200, y: 170, label: 'Crowd Sensor', icon: 'fa-tower-broadcast', type: 'smart', color: '#ec4899', congestion: 'low', description: 'AI-powered crowd density sensor for real-time monitoring.' },
+  { id: 'edge-node', x: 200, y: 310, label: 'Edge Node', icon: 'fa-microchip', type: 'smart', color: '#14b8a6', congestion: 'low', description: 'Local edge computing node for offline-resilient operations.' },
 ];
 
 interface TempleMapProps {
-  themeColor: string;
-  assignedGate?: string;
-  sosActive?: boolean;
-  onPointClick?: (point: Point) => void;
+  themeColor: string; assignedGate?: string; sosActive?: boolean; onPointClick?: (point: Point) => void;
 }
 
-export const TempleMap: React.FC<TempleMapProps> = ({ themeColor, assignedGate = 'gate-1', sosActive = false, onPointClick }) => {
-  const [isNavigating, setIsNavigating] = useState(false);
+export const TempleMap: React.FC<TempleMapProps> = ({ themeColor, assignedGate = 'gate-2', sosActive = false, onPointClick }) => {
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [activePoint, setActivePoint] = useState<Point | null>(null);
-  const [userPos, setUserPos] = useState({ x: 60, y: 340 });
-  const [proximityHeritage, setProximityHeritage] = useState<Point | null>(null);
-  const [isRerouted, setIsRerouted] = useState(false);
+  const [userPos, setUserPos] = useState({ x: 200, y: 380 });
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [filter, setFilter] = useState<string>('all');
   const [points, setPoints] = useState<Point[]>(KASHI_POINTS);
 
-  // Simulate real-time congestion updates
   useEffect(() => {
     const interval = setInterval(() => {
       setPoints(prev => prev.map(p => {
-        // Randomly change congestion for 2-3 points
-        if (Math.random() > 0.8) {
+        if (Math.random() > 0.85) {
           const levels: ('low' | 'moderate' | 'high')[] = ['low', 'moderate', 'high'];
           return { ...p, congestion: levels[Math.floor(Math.random() * levels.length)] };
         }
         return p;
       }));
-    }, 30000); // 30 seconds
+    }, 25000);
     return () => clearInterval(interval);
   }, []);
 
-  // Proximity Detection for Heritage
-  useEffect(() => {
-    const heritagePoints = points.filter(p => p.type === 'heritage');
-    const nearby = heritagePoints.find(p => {
-      const dist = Math.sqrt(Math.pow(p.x - userPos.x, 2) + Math.pow(p.y - userPos.y, 2));
-      return dist < 40;
-    });
-    
-    if (nearby && proximityHeritage?.id !== nearby.id) {
-      setProximityHeritage(nearby);
-      // Auto-hide after 8 seconds
-      const timer = setTimeout(() => setProximityHeritage(null), 8000);
-      return () => clearTimeout(timer);
-    } else if (!nearby) {
-      setProximityHeritage(null);
-    }
-  }, [userPos, points]);
-
-  // Dynamic Rerouting Logic
-  useEffect(() => {
-    const gate = points.find(p => p.id === assignedGate);
-    const security = points.find(p => p.id === 'security');
-    
-    if ((gate?.congestion === 'high' || security?.congestion === 'high') && !isRerouted) {
-      setIsRerouted(true);
-    }
-  }, [assignedGate, points]);
-
-  // Simulate movement
   useEffect(() => {
     if (isNavigating || sosActive) {
       const interval = setInterval(() => {
         setUserPos(prev => {
-          const targetId = sosActive ? 'exit' : 'sanctum';
-          const target = points.find(p => p.id === targetId)!;
-          const dx = target.x - prev.x;
-          const dy = target.y - prev.y;
+          const target = points.find(p => p.id === (sosActive ? 'exit-a' : 'sanctum'))!;
+          const dx = target.x - prev.x, dy = target.y - prev.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 5) {
-            if (!sosActive) setIsNavigating(false);
-            return prev;
-          }
-          return {
-            x: prev.x + (dx / dist) * 2,
-            y: prev.y + (dy / dist) * 2
-          };
+          if (dist < 5) { if (!sosActive) setIsNavigating(false); return prev; }
+          return { x: prev.x + (dx / dist) * 2, y: prev.y + (dy / dist) * 2 };
         });
       }, 100);
       return () => clearInterval(interval);
     }
   }, [isNavigating, sosActive, points]);
 
-  const congestionColor = (level: string) => {
-    switch (level) {
-      case 'low': return '#22c55e';
-      case 'moderate': return '#eab308';
-      case 'high': return '#ef4444';
-      default: return '#94a3b8';
-    }
+  const congestionColor = (l: string) => l === 'low' ? '#22c55e' : l === 'moderate' ? '#eab308' : '#ef4444';
+
+  const typeConfig: Record<string, { label: string; bg: string }> = {
+    entry: { label: '🚪 Entry', bg: 'bg-orange-500' },
+    exit: { label: '🚪 Exit', bg: 'bg-red-500' },
+    helpdesk: { label: '🆘 Help', bg: 'bg-purple-500' },
+    viewpoint: { label: '👁️ View', bg: 'bg-yellow-500' },
+    visit: { label: '📍 Visit', bg: 'bg-blue-500' },
+    facility: { label: '🔵 Facility', bg: 'bg-slate-500' },
+    security: { label: '🛡️ Security', bg: 'bg-slate-600' },
+    smart: { label: '📡 Smart', bg: 'bg-teal-500' },
+    sanctum: { label: '🛕 Sanctum', bg: 'bg-orange-600' },
   };
 
-  const navigationPath = useMemo(() => {
-    const start = userPos;
-    let gate = points.find(p => p.id === assignedGate) || points[0];
-    let security = points.find(p => p.id === 'security')!;
-    const waiting = points.find(p => p.id === 'waiting')!;
+  const filteredPoints = filter === 'all' ? points : points.filter(p => p.type === filter);
+
+  const navPath = useMemo(() => {
+    const s = userPos;
+    const gate = points.find(p => p.id === assignedGate) || points[0];
+    const sec = points.find(p => p.id === 'security-1')!;
+    const qr = points.find(p => p.id === 'qr-gate-1')!;
     const sanctum = points.find(p => p.id === 'sanctum')!;
-
-    // If rerouted, bypass high congestion points
-    if (isRerouted) {
-      // Find a low congestion gate instead
-      const altGate = points.find(p => p.type === 'gate' && p.congestion === 'low' && p.id !== 'exit') || gate;
-      gate = altGate;
-      // If security is high, we might suggest a direct path to a utility point first or a different check
-      // For simulation, we'll just adjust the path to look "different" and avoid the security node visually
-      return `M ${start.x} ${start.y} Q ${gate.x - 50} ${gate.y - 50} ${gate.x} ${gate.y} L ${waiting.x} ${waiting.y} L ${sanctum.x} ${sanctum.y}`;
-    }
-    
-    return `M ${start.x} ${start.y} L ${gate.x} ${gate.y} L ${security.x} ${security.y} L ${waiting.x} ${waiting.y} L ${sanctum.x} ${sanctum.y}`;
-  }, [userPos, assignedGate, isRerouted, points]);
-
-  const sosPath = useMemo(() => {
-    const start = userPos;
-    const medical = points.find(p => p.id === 'sos-1')!;
-    const exit = points.find(p => p.id === 'exit')!;
-    return `M ${start.x} ${start.y} L ${medical.x} ${medical.y} L ${exit.x} ${exit.y}`;
-  }, [userPos, points]);
+    return `M ${s.x} ${s.y} L ${gate.x} ${gate.y} L ${sec.x} ${sec.y} L ${qr.x} ${qr.y} L ${sanctum.x} ${sanctum.y}`;
+  }, [userPos, assignedGate, points]);
 
   return (
-    <div className="bg-[#FFFDF5] dark:bg-slate-950 rounded-[3.5rem] p-8 shadow-2xl border border-[#FDE68A] dark:border-white/5 overflow-hidden relative">
+    <div className="bg-[#FFFDF5] dark:bg-slate-950 rounded-[3rem] p-6 shadow-2xl border border-[#FDE68A] dark:border-white/5 overflow-hidden relative">
       {/* Header */}
-      <div className="flex justify-between items-start mb-8 relative z-10">
+      <div className="flex justify-between items-start mb-4 relative z-10">
         <div>
-          <h3 className="text-3xl font-black italic tracking-tighter text-[#B45309] dark:text-white">Kashi Divine Guide</h3>
-          <p className="text-[10px] text-[#D97706] font-black uppercase tracking-[0.4em]">Integrated Smart Scarf Map</p>
+          <h3 className="text-2xl font-black italic tracking-tighter text-[#B45309] dark:text-white">Kashi Vishwanath Blueprint</h3>
+          <p className="text-[9px] text-[#D97706] font-black uppercase tracking-[0.3em]">Interactive Temple Complex Map</p>
         </div>
-        <div className="flex flex-col items-end gap-2">
-          <div className="bg-[#FEF3C7] dark:bg-orange-500/10 px-4 py-2 rounded-2xl border border-[#FDE68A] dark:border-orange-500/20">
-            <p className="text-[9px] font-black text-[#B45309] dark:text-orange-400 uppercase tracking-widest">Wait Time: ~14m</p>
-          </div>
-          <div className="flex gap-2">
-             <button 
-               onClick={() => setShowHeatmap(!showHeatmap)}
-               className={`p-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${showHeatmap ? 'bg-orange-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}
-             >
-               <i className="fas fa-fire-flame-curved mr-1"></i> Heatmap
-             </button>
-          </div>
+        <div className="flex gap-2">
+          <button onClick={() => setShowHeatmap(!showHeatmap)} className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${showHeatmap ? 'bg-orange-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+            <i className="fas fa-fire-flame-curved mr-1"></i> Heatmap
+          </button>
+          <button onClick={() => { setIsNavigating(true); }} className="px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-orange-500 text-white">
+            <i className="fas fa-route mr-1"></i> Navigate
+          </button>
         </div>
       </div>
 
-      {/* Map Container */}
-      <div className="relative aspect-square bg-[#FDFBF0] dark:bg-slate-900/50 rounded-[3rem] border-4 border-[#FEF3C7] dark:border-white/5 overflow-hidden p-4 shadow-inner">
-        
+      {/* Filter Bar */}
+      <div className="flex gap-1.5 mb-4 flex-wrap">
+        <button onClick={() => setFilter('all')} className={`px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${filter === 'all' ? 'bg-orange-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>All</button>
+        {Object.entries(typeConfig).map(([key, val]) => (
+          <button key={key} onClick={() => setFilter(key)} className={`px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${filter === key ? 'bg-orange-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>{val.label}</button>
+        ))}
+      </div>
+
+      {/* Map */}
+      <div className="relative aspect-[4/3] bg-[#FDFBF0] dark:bg-slate-900/50 rounded-[2rem] border-2 border-[#FDE68A] dark:border-white/5 overflow-hidden blueprint-bg">
         {/* SOS Overlay */}
-        <AnimatePresence>
-          {sosActive && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 z-50 pointer-events-none"
-            >
-              <div className="absolute inset-0 bg-red-500/10 animate-pulse"></div>
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl flex items-center gap-3">
-                <i className="fas fa-exclamation-triangle animate-ping"></i> SOS ACTIVE: FOLLOW RED PATH
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {sosActive && (
+          <div className="absolute inset-0 z-50 pointer-events-none">
+            <div className="absolute inset-0 bg-red-500/10 animate-pulse"></div>
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-red-600 text-white px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-2xl flex items-center gap-2">
+              <i className="fas fa-exclamation-triangle animate-ping"></i> SOS: FOLLOW RED PATH
+            </div>
+          </div>
+        )}
 
-        {/* Reroute Notification */}
-        <AnimatePresence>
-          {isRerouted && !sosActive && (
-            <motion.div 
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -20, opacity: 0 }}
-              className="absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
-            >
-              <div className="bg-indigo-600 text-white px-6 py-2 rounded-full text-[9px] font-black uppercase tracking-widest shadow-2xl flex items-center gap-3">
-                <i className="fas fa-shuffle animate-pulse"></i> Congestion Detected: Rerouting to Optimal Path
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Heritage Proximity Pop-up */}
-        <AnimatePresence>
-          {proximityHeritage && (
-            <motion.div 
-              initial={{ x: -100, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -100, opacity: 0 }}
-              className="absolute top-20 left-4 z-[70] max-w-[200px] pointer-events-auto"
-            >
-              <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-4 rounded-2xl border-l-4 border-orange-500 shadow-xl">
-                <div className="flex items-center gap-2 mb-2">
-                  <i className="fas fa-scroll text-orange-500 text-xs"></i>
-                  <span className="text-[9px] font-black uppercase tracking-widest dark:text-white">Heritage Insight</span>
-                </div>
-                <p className="text-[10px] font-bold text-slate-800 dark:text-slate-200 leading-tight">
-                  {(proximityHeritage as any).fact}
-                </p>
-                <button 
-                  onClick={() => setProximityHeritage(null)}
-                  className="mt-2 text-[8px] font-black uppercase text-slate-400 hover:text-slate-600"
-                >
-                  Dismiss
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Heatmap Layer */}
+        {/* Heatmap */}
         <AnimatePresence>
           {showHeatmap && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.4 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 z-0 pointer-events-none"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.4 }} exit={{ opacity: 0 }} className="absolute inset-0 z-0 pointer-events-none">
               {points.filter(p => p.congestion === 'high').map(p => (
-                <div 
-                  key={`heat-${p.id}`}
-                  className="absolute rounded-full blur-3xl animate-pulse"
-                  style={{ 
-                    left: p.x - 60, 
-                    top: p.y - 60, 
-                    width: 120, 
-                    height: 120, 
-                    backgroundColor: '#ef4444' 
-                  }}
-                ></div>
+                <div key={`h-${p.id}`} className="absolute rounded-full blur-3xl animate-pulse" style={{ left: `${(p.x/400)*100}%`, top: `${(p.y/400)*100}%`, width: 100, height: 100, backgroundColor: '#ef4444', transform: 'translate(-50%,-50%)' }}></div>
               ))}
             </motion.div>
           )}
         </AnimatePresence>
 
-        <svg viewBox="0 0 400 400" className="w-full h-full relative z-10">
-          {/* Temple Walls / Structure */}
-          <rect x="150" y="50" width="100" height="100" rx="20" fill="none" stroke="#E5E7EB" strokeWidth="2" className="dark:stroke-slate-700" />
-          <path d="M 50 380 L 350 380 L 350 320 L 50 320 Z" fill="none" stroke="#E5E7EB" strokeWidth="2" className="dark:stroke-slate-700" />
+        <svg viewBox="0 0 400 420" className="w-full h-full relative z-10">
+          {/* Temple complex outline */}
+          <rect x="70" y="20" width="260" height="160" rx="12" fill="none" stroke="#E5E7EB" strokeWidth="1.5" strokeDasharray="6 3" className="dark:stroke-slate-700" />
+          <text x="200" y="14" textAnchor="middle" className="text-[6px] fill-slate-300 dark:fill-slate-600 font-bold uppercase">Temple Complex</text>
+          {/* Inner sanctum area */}
+          <rect x="160" y="55" width="80" height="70" rx="8" fill="none" stroke="#F97316" strokeWidth="1" opacity="0.3" />
+          {/* Corridor */}
+          <rect x="120" y="200" width="160" height="140" rx="10" fill="none" stroke="#E5E7EB" strokeWidth="1" strokeDasharray="4 4" className="dark:stroke-slate-700" />
+          <text x="200" y="195" textAnchor="middle" className="text-[5px] fill-slate-300 dark:fill-slate-600 font-bold uppercase">Kashi Vishwanath Corridor</text>
+          {/* Entry zone */}
+          <rect x="30" y="340" width="340" height="70" rx="10" fill="none" stroke="#F97316" strokeWidth="1" opacity="0.2" />
+          <text x="200" y="336" textAnchor="middle" className="text-[5px] fill-orange-300 font-bold uppercase">Entry Zone</text>
 
-          {/* Paths */}
-          <path 
-            d="M 50 350 L 100 300 L 200 250 L 200 80" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="30" 
-            className="text-slate-100 dark:text-slate-800/50"
-            strokeLinecap="round"
-          />
-          
-          {/* Active Navigation Path */}
-          <AnimatePresence>
-            {isNavigating && !sosActive && (
-              <motion.path 
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 3, ease: "linear" }}
-                d={navigationPath}
-                fill="none" 
-                stroke={themeColor} 
-                strokeWidth="12" 
-                strokeLinecap="round"
-                strokeDasharray="15 10"
-                className="animate-[pulse_2s_infinite]"
-              />
-            )}
-          </AnimatePresence>
+          {/* Navigation Path */}
+          {isNavigating && !sosActive && (
+            <motion.path initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }} transition={{ duration: 3 }}
+              d={navPath} fill="none" stroke={themeColor} strokeWidth="8" strokeLinecap="round" strokeDasharray="12 6" opacity="0.7" />
+          )}
+          {sosActive && (
+            <motion.path initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 2 }}
+              d={`M ${userPos.x} ${userPos.y} L 50 120 L 380 80`} fill="none" stroke="#dc2626" strokeWidth="8" strokeLinecap="round" strokeDasharray="8 4" />
+          )}
 
-          {/* SOS Path */}
-          <AnimatePresence>
-            {sosActive && (
-              <motion.path 
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 2, ease: "linear" }}
-                d={sosPath}
-                fill="none" 
-                stroke="#dc2626" 
-                strokeWidth="12" 
-                strokeLinecap="round"
-                strokeDasharray="10 5"
-              />
-            )}
-          </AnimatePresence>
-
-          {/* Points of Interest */}
-          {points.map((pt) => {
+          {/* Points */}
+          {filteredPoints.map(pt => {
             const isAssigned = pt.id === assignedGate;
             return (
-              <g 
-                key={pt.id} 
-                className="cursor-pointer group"
-                onClick={() => {
-                  setActivePoint(pt);
-                  onPointClick?.(pt);
-                }}
-              >
-                <circle 
-                  cx={pt.x} 
-                  cy={pt.y} 
-                  r={isAssigned ? "24" : "18"} 
-                  fill="none" 
-                  stroke={congestionColor(pt.congestion)} 
-                  strokeWidth="2" 
-                  className={pt.congestion === 'high' ? 'animate-pulse' : ''}
-                />
-                <circle 
-                  cx={pt.x} 
-                  cy={pt.y} 
-                  r={isAssigned ? "20" : "15"} 
-                  fill="white" 
-                  className="dark:fill-slate-800 shadow-xl" 
-                />
-                {isAssigned && (
-                  <motion.circle 
-                    cx={pt.x} cy={pt.y} r="25" 
-                    stroke={themeColor} fill="none" strokeWidth="2" 
-                    animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
-                    transition={{ repeat: Infinity, duration: 2 }}
-                  />
-                )}
-                <foreignObject x={pt.x - 10} y={pt.y - 10} width="20" height="20">
+              <g key={pt.id} className="cursor-pointer" onClick={() => { setActivePoint(pt); onPointClick?.(pt); }}>
+                <circle cx={pt.x} cy={pt.y} r={isAssigned ? 18 : 13} fill="none" stroke={congestionColor(pt.congestion)} strokeWidth="1.5" className={pt.congestion === 'high' ? 'animate-pulse' : ''} />
+                <circle cx={pt.x} cy={pt.y} r={isAssigned ? 15 : 10} fill="white" className="dark:fill-slate-800" />
+                {isAssigned && <motion.circle cx={pt.x} cy={pt.y} r="20" stroke={themeColor} fill="none" strokeWidth="2" animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }} transition={{ repeat: Infinity, duration: 2 }} />}
+                <foreignObject x={pt.x - 7} y={pt.y - 7} width="14" height="14">
                   <div className="flex items-center justify-center h-full" style={{ color: isAssigned ? themeColor : pt.color }}>
-                    <i className={`fas ${pt.icon} text-[10px]`}></i>
+                    <i className={`fas ${pt.icon}`} style={{ fontSize: '7px' }}></i>
                   </div>
                 </foreignObject>
-                <text 
-                  x={pt.x} 
-                  y={pt.y + 35} 
-                  textAnchor="middle" 
-                  className={`text-[7px] font-black uppercase tracking-widest transition-all ${activePoint?.id === pt.id ? 'fill-orange-600 opacity-100' : 'fill-slate-400 opacity-0 group-hover:opacity-100'}`}
-                >
-                  {pt.label}
-                </text>
+                <text x={pt.x} y={pt.y + (isAssigned ? 28 : 22)} textAnchor="middle" className="text-[5px] font-bold uppercase fill-slate-400 dark:fill-slate-500">{pt.label.split(':')[0]}</text>
               </g>
             );
           })}
 
-          {/* "You Are Here" Indicator */}
-          <motion.g
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-          >
-            <circle cx={userPos.x} cy={userPos.y} r="10" fill={sosActive ? '#dc2626' : themeColor} className="shadow-2xl" />
-            <circle cx={userPos.x} cy={userPos.y} r="18" stroke={sosActive ? '#dc2626' : themeColor} fill="none" strokeWidth="2" className="opacity-30" />
-            <foreignObject x={userPos.x - 6} y={userPos.y - 6} width="12" height="12">
-              <div className="flex items-center justify-center h-full text-white">
-                <i className="fas fa-user text-[7px]"></i>
-              </div>
+          {/* You Are Here */}
+          <motion.g animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }}>
+            <circle cx={userPos.x} cy={userPos.y} r="8" fill={sosActive ? '#dc2626' : themeColor} />
+            <circle cx={userPos.x} cy={userPos.y} r="14" stroke={sosActive ? '#dc2626' : themeColor} fill="none" strokeWidth="1.5" opacity="0.3" />
+            <foreignObject x={userPos.x - 5} y={userPos.y - 5} width="10" height="10">
+              <div className="flex items-center justify-center h-full text-white"><i className="fas fa-user" style={{ fontSize: '6px' }}></i></div>
             </foreignObject>
           </motion.g>
         </svg>
 
-        {/* Info Pop-up */}
+        {/* Info Popup */}
         <AnimatePresence>
           {activePoint && (
-            <motion.div 
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
-              className="absolute bottom-4 left-4 right-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-6 rounded-3xl border border-orange-200 dark:border-white/10 shadow-2xl z-[60]"
-            >
+            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
+              className="absolute bottom-3 left-3 right-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-5 rounded-2xl border border-orange-200 dark:border-white/10 shadow-2xl z-[60]">
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white" style={{ backgroundColor: activePoint.color }}>
-                    <i className={`fas ${activePoint.icon}`}></i>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white" style={{ backgroundColor: activePoint.color }}>
+                    <i className={`fas ${activePoint.icon} text-sm`}></i>
                   </div>
                   <div>
-                    <h4 className="font-black text-lg italic tracking-tighter dark:text-white">{activePoint.label}</h4>
+                    <h4 className="font-black text-sm italic tracking-tighter dark:text-white">{activePoint.label}</h4>
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: congestionColor(activePoint.congestion) }}></div>
-                      <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">{activePoint.congestion} Congestion</span>
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: congestionColor(activePoint.congestion) }}></div>
+                      <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">{activePoint.congestion} congestion</span>
+                      <span className="text-[7px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-400">{activePoint.type}</span>
                     </div>
                   </div>
                 </div>
-                <button onClick={() => setActivePoint(null)} className="text-slate-400 hover:text-slate-600">
-                  <i className="fas fa-times"></i>
-                </button>
+                <button onClick={() => setActivePoint(null)} className="text-slate-400 hover:text-slate-600"><i className="fas fa-times text-xs"></i></button>
               </div>
-              {activePoint.description && (
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed mt-4">
-                  {activePoint.description}
-                </p>
-              )}
-              {activePoint.type === 'heritage' && (
-                <div className="mt-4 p-3 bg-orange-50 dark:bg-orange-500/10 rounded-xl border border-orange-100 dark:border-orange-500/20 flex items-center gap-3">
-                   <i className="fas fa-scroll text-orange-500"></i>
-                   <p className="text-[9px] font-bold text-orange-700 dark:text-orange-400 uppercase tracking-widest">Heritage Insight Unlocked! +5 Aura</p>
+              {activePoint.description && <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed mt-2">{activePoint.description}</p>}
+              {activePoint.fact && (
+                <div className="mt-3 p-2.5 bg-orange-50 dark:bg-orange-500/10 rounded-xl border border-orange-100 dark:border-orange-500/20 flex items-start gap-2">
+                  <i className="fas fa-scroll text-orange-500 text-[9px] mt-0.5"></i>
+                  <p className="text-[9px] font-medium text-orange-700 dark:text-orange-400 leading-relaxed">{activePoint.fact}</p>
                 </div>
               )}
             </motion.div>
@@ -427,28 +244,27 @@ export const TempleMap: React.FC<TempleMapProps> = ({ themeColor, assignedGate =
         </AnimatePresence>
       </div>
 
-      {/* Controls */}
-      <div className="mt-8">
-        <div className="bg-[#FEF3C7] dark:bg-slate-800 p-6 rounded-3xl border border-[#FDE68A] dark:border-white/5 flex flex-col justify-center shadow-xl">
-           <p className="text-[10px] font-black text-[#B45309] dark:text-slate-400 uppercase tracking-widest mb-2 text-center">Assigned Entry Point</p>
-           <p className="text-2xl font-black text-[#B45309] dark:text-white italic tracking-tighter text-center">GATE 2</p>
-        </div>
+      {/* Legend */}
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        {Object.entries(typeConfig).map(([key, val]) => {
+          const count = points.filter(p => p.type === key).length;
+          return (
+            <div key={key} className="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 px-2 py-1.5 rounded-lg">
+              <div className={`w-2 h-2 rounded-full ${val.bg}`}></div>
+              <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">{val.label} ({count})</span>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Legend */}
-      <div className="mt-6 flex flex-wrap justify-center gap-6 opacity-60">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-green-500"></div>
-          <span className="text-[8px] font-black uppercase tracking-widest">Optimal</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-          <span className="text-[8px] font-black uppercase tracking-widest">Moderate</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-          <span className="text-[8px] font-black uppercase tracking-widest">Critical</span>
-        </div>
+      {/* Congestion Legend */}
+      <div className="mt-3 flex justify-center gap-6 opacity-50">
+        {[{ l: 'Optimal', c: '#22c55e' }, { l: 'Moderate', c: '#eab308' }, { l: 'Critical', c: '#ef4444' }].map(i => (
+          <div key={i.l} className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: i.c }}></div>
+            <span className="text-[7px] font-black uppercase tracking-widest">{i.l}</span>
+          </div>
+        ))}
       </div>
     </div>
   );

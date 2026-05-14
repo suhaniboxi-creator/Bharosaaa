@@ -1,0 +1,114 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+/* Iris scan animations */
+@keyframes irisPulse {
+  0% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.3); opacity: 0; }
+  100% { transform: scale(1); opacity: 0.6; }
+}
+@keyframes irisBeam {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes irisCapture {
+  0% { stroke-dashoffset: 283; }
+  100% { stroke-dashoffset: 0; }
+}
+
+/* Chain delink animation */
+@keyframes chainBreak {
+  0% { transform: scaleX(1); opacity: 1; }
+  50% { transform: scaleX(1.2); opacity: 0.8; }
+  100% { transform: scaleX(0); opacity: 0; }
+}
+
+/* Data flow particles */
+@keyframes dataFlow {
+  0% { transform: translateX(0); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateX(200px); opacity: 0; }
+}
+
+/* Edge node glow */
+@keyframes edgeGlow {
+  0%, 100% { box-shadow: 0 0 5px rgba(34, 197, 94, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.6); }
+}
+
+/* Pipeline flow */
+@keyframes pipelineFlow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* Security alert */
+@keyframes securityFlash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* Scan line */
+@keyframes scanLine {
+  0% { top: 10%; opacity: 0.1; }
+  50% { top: 90%; opacity: 0.8; }
+  100% { top: 10%; opacity: 0.1; }
+}
+
+/* QR laser */
+@keyframes qrLaser {
+  0% { left: 0%; }
+  50% { left: 100%; }
+  100% { left: 0%; }
+}
+
+/* Blueprint grid */
+.blueprint-bg {
+  background-image:
+    linear-gradient(rgba(249, 115, 22, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(249, 115, 22, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Utility classes */
+.iris-pulse { animation: irisPulse 2s ease-in-out infinite; }
+.iris-beam { animation: irisBeam 3s linear infinite; }
+.iris-capture { animation: irisCapture 2s ease-out forwards; }
+.chain-break { animation: chainBreak 0.8s ease-out forwards; }
+.data-flow { animation: dataFlow 2s linear infinite; }
+.edge-glow { animation: edgeGlow 2s ease-in-out infinite; }
+.pipeline-flow {
+  background: linear-gradient(90deg, transparent, rgba(249, 115, 22, 0.3), transparent);
+  background-size: 200% 100%;
+  animation: pipelineFlow 2s linear infinite;
+}
+.security-flash { animation: securityFlash 0.5s ease-in-out infinite; }
+
+/* Scrollbar */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* OTP input styling */
+.otp-input {
+  width: 3rem;
+  height: 3.5rem;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 900;
+  border-radius: 1rem;
+  border: 2px solid #e2e8f0;
+  outline: none;
+  transition: all 0.2s;
+}
+.otp-input:focus {
+  border-color: #F97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+}
+.dark .otp-input {
+  background: #1e293b;
+  border-color: rgba(255,255,255,0.1);
+  color: white;
+}
+.dark .otp-input:focus {
+  border-color: #F97316;
+}

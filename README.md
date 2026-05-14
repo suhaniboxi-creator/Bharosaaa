@@ -1,20 +1,109 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# 🛕 BHAROSA  
+### Smart Temple Ecosystem for Crowd Safety, Transparency & Devotee Experience
 
-# Run and deploy your AI Studio app
+> A technology-driven pilgrimage management system designed to transform temple crowd control, safety response, and spiritual engagement.
 
-This contains everything you need to run your app locally.
+---
 
-View your app in AI Studio: https://ai.studio/apps/c7f6a232-eebc-4fe2-91ae-d6d3d0a4be0d
+## 🌍 Problem Statement
 
-## Run Locally
+Major religious sites face:
 
-**Prerequisites:**  Node.js
+- Overcrowding & stampede risks  
+- Long waiting times  
+- Emergency response delays  
+- Lack of transparency in donations & entries  
+- No real-time crowd intelligence  
 
+BHAROSA solves this using a Smart Scarf + Digital Trust Ledger ecosystem.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+---
+
+## 💡 Solution
+
+BHAROSA is an integrated platform that combines:
+
+- 🎟 Smart Digital Registration
+- 📡 QR-based Entry Validation
+- 📊 Real-time Crowd Analytics
+- 🚨 Emergency SOS Dispatch System
+- 🔐 Immutable Trust Ledger
+- 📱 Pilgrim Smart Kiosk Experience
+
+All powered by a modern scalable architecture.
+
+---
+
+## 🧠 Key Features
+
+### 📝 Smart Registration
+- Digital scarf generation
+- Slot-based entry allocation
+- Color-coded crowd flow management
+
+### 📷 QR Scanner Validation
+- Optical validation at entry points
+- Real-time status updates
+- Ledger synchronization
+
+### 📊 Admin Dashboard
+- Live crowd density visualization
+- Wait time estimation
+- Active emergency tracking
+
+### 🚨 Emergency Command Center
+- SOS broadcast system
+- Team dispatch tracking
+- Status updates (ACTIVE → EN_ROUTE → RESOLVED)
+
+### 🔐 Trust Ledger
+- Immutable transaction history
+- Entry logs
+- SOS logs
+- Administrative actions
+
+### 📱 Pilgrim Kiosk
+- Personalized journey dashboard
+- Devotion aura points
+- Quest-based engagement
+- Spiritual mini-game
+
+---
+
+## 🏗 Tech Stack
+
+### Frontend
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS
+- Recharts
+- Font Awesome
+
+### Architecture
+- Single Page Application (SPA)
+- Component-based architecture
+- Role-based UI rendering
+- Multi-language support (EN / HI / TE)
+
+---
+
+## 🎨 System Architecture
+
+Frontend (React + Vite)  
+↓  
+REST API (Express)  
+↓  
+Database (MongoDB)  
+↓  
+Real-time Dashboard & Emergency Control  
+
+---
+
+## 🚀 Deployment
+
+### Run Locally
+
+```bash
+npm install
+npm run dev

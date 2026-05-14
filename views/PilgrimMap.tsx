@@ -58,7 +58,7 @@ export const PilgrimMap: React.FC<PilgrimMapProps> = ({ registeredPilgrims, onSe
     );
   }
 
-  if (!currentPilgrim) return null;
+  const displayPilgrim = currentPilgrim || { id: 'GUEST', name: 'Guest Pilgrim', age: 0, gender: 'Other', groupSize: 1, slotTime: '08:00 AM', colorCode: 'RED' as any, qrValue: '', status: 'PENDING' as any, auraPoints: 0, badges: [], completedQuests: [] };
 
   return (
     <div className="max-w-lg mx-auto space-y-6 pb-24 px-4 animate-in slide-in-from-bottom duration-1000 relative">
@@ -134,7 +134,7 @@ export const PilgrimMap: React.FC<PilgrimMapProps> = ({ registeredPilgrims, onSe
               <button 
                 onClick={() => { 
                   setSosActive(true); 
-                  onSendSOS(currentPilgrim); 
+                  onSendSOS(displayPilgrim as any); 
                   addNotification('SOS ACTIVE', 'Emergency teams notified. Follow the red path.', 'warning');
                 }}
                 className="w-full bg-red-600 text-white py-8 rounded-[2.5rem] font-black text-2xl shadow-2xl flex items-center justify-center gap-6 transition-all hover:bg-red-700 active:scale-95 group-hover:scale-[1.03]"
