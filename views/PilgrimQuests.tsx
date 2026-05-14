@@ -37,7 +37,7 @@ export const PilgrimQuests: React.FC<PilgrimQuestsProps> = ({ registeredPilgrims
     { id: 'q4', icon: 'fa-hand-holding-heart', title: 'Seva: Clean the Courtyard', aura: 150, location: 'Main Courtyard', progress: 0, description: 'Perform 10 minutes of voluntary service to keep the temple clean.' },
   ];
 
-  if (!currentPilgrim) return null;
+  const pilgrim = currentPilgrim || { id: 'GUEST', name: 'Guest Pilgrim', age: 0, gender: 'Other', groupSize: 1, slotTime: '08:00 AM', colorCode: 'RED' as any, qrValue: '', status: 'PENDING' as any, auraPoints: 0, badges: [], completedQuests: [] };
 
   return (
     <div className="max-w-lg mx-auto space-y-6 pb-24 px-4 animate-in slide-in-from-bottom duration-1000">
@@ -50,7 +50,7 @@ export const PilgrimQuests: React.FC<PilgrimQuestsProps> = ({ registeredPilgrims
           <div className="text-right">
             <div className="flex items-center gap-2 text-orange-300">
               <i className="fas fa-sparkles text-sm animate-pulse"></i>
-              <span className="text-3xl font-black">{currentPilgrim.auraPoints}</span>
+              <span className="text-3xl font-black">{pilgrim.auraPoints}</span>
             </div>
             <p className="text-[8px] uppercase font-black tracking-widest opacity-40">Current Aura</p>
           </div>

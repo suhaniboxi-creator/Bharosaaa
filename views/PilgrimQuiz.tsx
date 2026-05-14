@@ -61,7 +61,7 @@ export const PilgrimQuiz: React.FC<PilgrimQuizProps> = ({ registeredPilgrims, t,
     }, 2000);
   };
 
-  if (!currentPilgrim) return null;
+  const pilgrim = currentPilgrim || { id: 'GUEST', name: 'Guest', auraPoints: 0 };
 
   return (
     <div className="max-w-lg mx-auto space-y-6 pb-24 px-4 animate-in slide-in-from-bottom duration-1000">

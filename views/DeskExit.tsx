@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Pilgrim, Temple } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
+import { api } from '../utils/api';
 
 interface DeskExitProps {
   onDeactivate: (qrValue: string) => Promise<boolean>;
@@ -13,22 +14,39 @@ interface DeskExitProps {
 export const DeskExit: React.FC<DeskExitProps> = ({ onDeactivate, registeredPilgrims, t, currentTemple }) => {
   const [qrInput, setQrInput] = useState('');
   const [deskId, setDeskId] = useState('EXIT-A');
-  const [status, setStatus] = useState<'IDLE' | 'SCANNING' | 'SUCCESS' | 'ERROR'>('IDLE');
-  const [lastPilgrim, setLastPilgrim] = useState<Pilgrim | null>(null);
+  const [status, setStatus] = useState<'IDLE' | 'IRIS_SCAN' | 'VERIFYING' | 'SUCCESS' | 'MISMATCH' | 'ERROR'>('IDLE');
+  const [exitResult, setExitResult] = useState<any>(null);
+  const [irisProgress, setIrisProgress] = useState(0);
+  const [scarfDelinked, setScarfDelinked] = useState(false);
 
   const handleExit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!qrInput) return;
 
-    setStatus('SCANNING');
-    const success = await onDeactivate(qrInput);
+    // Step 1: Iris re-scan
+    setStatus('IRIS_SCAN');
+    setIrisProgress(0);
+    const progressInterval = setInterval(() => {
+      setIrisProgress(p => { if (p >= 100) { clearInterval(progressInterval); return 100; } return p + 3; });
+    }, 40);
+    await new Promise(r => setTimeout(r, 1500));
+    clearInterval(progressInterval);
+    setIrisProgress(100);
 
-    if (success) {
-      const pilgrim = registeredPilgrims.find(p => p.qrValue === qrInput);
-      setLastPilgrim(pilgrim || null);
+    // Step 2: Verify via backend
+    setStatus('VERIFYING');
+    const res = await api.verifyExit(qrInput, deskId);
+
+    if (res.success) {
+      setExitResult(res);
       setStatus('SUCCESS');
+      setScarfDelinked(true);
+      await onDeactivate(qrInput);
       setQrInput('');
-      setTimeout(() => setStatus('IDLE'), 3000);
+      setTimeout(() => { setStatus('IDLE'); setExitResult(null); setScarfDelinked(false); }, 5000);
+    } else if (res.mismatch) {
+      setExitResult(res);
+      setStatus('MISMATCH');
     } else {
       setStatus('ERROR');
       setTimeout(() => setStatus('IDLE'), 2000);
@@ -37,161 +55,101 @@ export const DeskExit: React.FC<DeskExitProps> = ({ onDeactivate, registeredPilg
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
-      <div className="text-center mb-12">
-        <div className="w-20 h-20 bg-red-50 dark:bg-red-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-6 text-red-500 text-3xl shadow-inner">
-          <i className="fas fa-door-open"></i>
-        </div>
-        <h2 className="text-4xl font-black italic tracking-tighter dark:text-white uppercase">Desk Exit Portal</h2>
-        <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.4em] mt-2">Deactivate Scarf & Finalize Journey</p>
+      <div className="text-center mb-8">
+        <div className="w-20 h-20 bg-red-50 dark:bg-red-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-4 text-red-500 text-3xl shadow-inner"><i className="fas fa-door-open"></i></div>
+        <h2 className="text-3xl font-black italic tracking-tighter dark:text-white uppercase">Exit Verification Portal</h2>
+        <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.4em] mt-2">Iris Re-Verify • Delink Scarf • Finalize Journey</p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
-        {/* Input Section */}
-        <div className="bg-white dark:bg-slate-900 p-10 rounded-[3.5rem] shadow-2xl border border-slate-100 dark:border-white/5 space-y-8">
-          <form onSubmit={handleExit} className="space-y-6">
-            <div className="grid grid-cols-1 gap-6">
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Exit Desk Location</label>
-                <select 
-                  value={deskId} 
-                  onChange={e => setDeskId(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 py-4 px-6 rounded-2xl font-bold dark:text-white outline-none border-none shadow-inner"
-                >
-                  <option value="EXIT-A">Exit Gate A Desk</option>
-                  <option value="EXIT-B">Exit Gate B Desk</option>
-                  <option value="EXIT-C">Exit Gate C Desk</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Scan Scarf QR Code</label>
-                <div className="relative">
-                  <input 
-                    type="text"
-                    placeholder="e.g. KV-GATEA-OR10001"
-                    value={qrInput}
-                    onChange={e => setQrInput(e.target.value.toUpperCase())}
-                    className="w-full bg-slate-50 dark:bg-slate-800 py-6 px-8 rounded-3xl text-xl font-black tracking-wider focus:ring-4 transition-all outline-none border-none dark:text-white shadow-inner"
-                    style={{ '--tw-ring-color': currentTemple.themeColor } as any}
-                  />
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300">
-                    <i className="fas fa-qrcode text-2xl"></i>
-                  </div>
-                  
-                  {/* Progress Bar */}
-                  <div className="absolute -bottom-2 left-4 right-4 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <AnimatePresence>
-                      {status === 'SCANNING' && (
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: '100%' }}
-                          transition={{ duration: 0.8, ease: "easeInOut" }}
-                          className="h-full bg-red-500"
-                        />
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-              </div>
+        {/* Input */}
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-[3rem] shadow-2xl border border-slate-100 dark:border-white/5 space-y-6">
+          <form onSubmit={handleExit} className="space-y-5">
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Exit Desk</label>
+              <select value={deskId} onChange={e => setDeskId(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 py-4 px-6 rounded-2xl font-bold dark:text-white outline-none border-none">
+                <option value="EXIT-A">Exit Gate A</option><option value="EXIT-B">Exit Gate B</option><option value="EXIT-C">Exit Gate C</option>
+              </select>
             </div>
-
-            <button 
-              type="submit"
-              disabled={status === 'SCANNING'}
-              className={`w-full py-6 rounded-3xl font-black text-lg italic tracking-tighter uppercase shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-4 ${
-                status === 'SCANNING' ? 'bg-slate-200 text-slate-400' : 'bg-red-600 text-white hover:bg-red-700'
-              }`}
-            >
-              {status === 'SCANNING' ? (
-                <i className="fas fa-circle-notch animate-spin"></i>
-              ) : (
-                <i className="fas fa-power-off"></i>
-              )}
-              Deactivate Scarf
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Scarf / Pilgrim ID</label>
+              <select value={qrInput} onChange={e => setQrInput(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 py-4 px-6 rounded-2xl font-bold dark:text-white outline-none border-none">
+                <option value="">Select pilgrim...</option>
+                {registeredPilgrims.filter(p => p.status === 'CHECKED_IN').map(p => (
+                  <option key={p.id} value={p.qrValue}>{p.id} - {p.name}</option>
+                ))}
+              </select>
+            </div>
+            <button type="submit" disabled={status !== 'IDLE' || !qrInput}
+              className="w-full py-5 rounded-2xl font-black text-lg uppercase shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3 bg-red-600 text-white hover:bg-red-700 disabled:opacity-50">
+              <i className="fas fa-eye"></i> Verify Iris & Exit
             </button>
           </form>
 
-          <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-3xl border border-dashed border-slate-200 dark:border-white/10 text-center">
-             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">System Note</p>
-             <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-               Deactivation marks the pilgrim's journey as 'COMPLETED' in the Trust Ledger. The physical scarf is then ready for sanitization and reuse.
-             </p>
-          </div>
+          {/* Iris Scan Progress */}
+          {status === 'IRIS_SCAN' && (
+            <div className="bg-indigo-50 dark:bg-indigo-500/10 p-6 rounded-2xl border border-indigo-200 dark:border-indigo-500/20 text-center space-y-4">
+              <div className="w-24 h-24 rounded-full mx-auto relative flex items-center justify-center">
+                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(99,102,241,0.2)" strokeWidth="3" />
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="#6366f1" strokeWidth="3" strokeDasharray="283"
+                    style={{ strokeDashoffset: 283 - (283 * irisProgress / 100) }} strokeLinecap="round" transform="rotate(-90 50 50)" />
+                </svg>
+                <i className="fas fa-eye text-3xl text-indigo-500 animate-pulse"></i>
+              </div>
+              <p className="text-sm font-black text-indigo-700 dark:text-indigo-300">Scanning Iris... {irisProgress}%</p>
+            </div>
+          )}
         </div>
 
-        {/* Feedback Section */}
+        {/* Result */}
         <div className="relative">
           <AnimatePresence mode="wait">
-            {status === 'SUCCESS' && lastPilgrim ? (
-              <motion.div 
-                key="success"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-green-500 text-white p-10 rounded-[3.5rem] shadow-2xl h-full flex flex-col items-center justify-center text-center space-y-6"
-              >
-                <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center text-5xl">
-                  <i className="fas fa-check"></i>
-                </div>
+            {status === 'SUCCESS' && exitResult ? (
+              <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+                className="bg-green-500 text-white p-8 rounded-[3rem] shadow-2xl h-full flex flex-col items-center justify-center text-center space-y-5">
+                <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center text-4xl"><i className="fas fa-check"></i></div>
                 <div>
-                  <h3 className="text-3xl font-black italic tracking-tighter uppercase leading-tight">Journey Finalized</h3>
-                  <p className="text-white/80 font-bold uppercase tracking-widest text-[10px] mt-2">Scarf ID: {lastPilgrim.qrValue}</p>
+                  <h3 className="text-2xl font-black italic uppercase">Journey Finalized</h3>
+                  <p className="text-white/80 font-bold text-[10px] uppercase tracking-widest mt-1">Same Person Verified ✓</p>
                 </div>
-                <div className="bg-white/10 p-6 rounded-3xl w-full space-y-4">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Pilgrim</p>
-                    <p className="text-xl font-black italic">{lastPilgrim.name}</p>
+                {/* Iris Match */}
+                <div className="bg-white/10 p-4 rounded-2xl w-full space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Iris Match</span>
+                    <span className="text-lg font-black">{exitResult.irisResult?.confidence}%</span>
                   </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white/10 p-3 rounded-2xl">
-                      <p className="text-[8px] font-black uppercase tracking-widest opacity-60">Aura Earned</p>
-                      <p className="text-lg font-black italic">+{lastPilgrim.auraPoints}</p>
-                    </div>
-                    <div className="bg-white/10 p-3 rounded-2xl">
-                      <p className="text-[8px] font-black uppercase tracking-widest opacity-60">Age / Gender</p>
-                      <p className="text-lg font-black italic">{lastPilgrim.age} / {lastPilgrim.gender[0]}</p>
-                    </div>
+                  <div className="grid grid-cols-2 gap-2 text-[9px] font-mono opacity-60">
+                    <div>Entry: {exitResult.irisResult?.storedHash?.slice(0, 16)}...</div>
+                    <div>Exit: {exitResult.irisResult?.newHash?.slice(0, 16)}...</div>
                   </div>
-
-                  {lastPilgrim.badges && lastPilgrim.badges.length > 0 && (
-                    <div className="pt-2">
-                      <p className="text-[8px] font-black uppercase tracking-widest opacity-60 mb-2">Divine Badges Earned</p>
-                      <div className="flex flex-wrap justify-center gap-2">
-                        {lastPilgrim.badges.map((badge, i) => (
-                          <span key={i} className="px-3 py-1 bg-white/20 rounded-full text-[9px] font-black uppercase tracking-widest">
-                            {badge}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
+                {/* Journey */}
+                <div className="bg-white/10 p-4 rounded-2xl w-full grid grid-cols-2 gap-3 text-[10px]">
+                  <div><span className="opacity-60">Duration</span><p className="font-black text-lg">{exitResult.journey?.durationMinutes}m</p></div>
+                  <div><span className="opacity-60">Exit Gate</span><p className="font-black text-lg">{exitResult.journey?.exitGate}</p></div>
+                </div>
+                {/* Delink */}
+                {scarfDelinked && (
+                  <div className="bg-white/10 p-3 rounded-xl flex items-center gap-3 w-full">
+                    <div className="chain-break w-8 h-0.5 bg-white"></div>
+                    <span className="text-[9px] font-black uppercase tracking-widest">Identity Delinked • Zero Data Carryover ✓</span>
+                  </div>
+                )}
               </motion.div>
-            ) : status === 'ERROR' ? (
-              <motion.div 
-                key="error"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-red-500 text-white p-10 rounded-[3.5rem] shadow-2xl h-full flex flex-col items-center justify-center text-center space-y-6"
-              >
-                <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center text-5xl">
-                  <i className="fas fa-times"></i>
-                </div>
-                <div>
-                  <h3 className="text-3xl font-black italic tracking-tighter uppercase">Invalid Scarf</h3>
-                  <p className="text-white/80 font-bold uppercase tracking-widest text-[10px] mt-2">Check ID & Try Again</p>
-                </div>
+            ) : status === 'MISMATCH' ? (
+              <motion.div key="mismatch" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                className="bg-red-600 text-white p-8 rounded-[3rem] shadow-2xl h-full flex flex-col items-center justify-center text-center space-y-4 security-flash">
+                <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center text-4xl"><i className="fas fa-exclamation-triangle"></i></div>
+                <h3 className="text-2xl font-black uppercase">⚠ IRIS MISMATCH</h3>
+                <p className="text-white/80 text-sm font-bold">Security alert triggered. Scarf locked for manual review.</p>
+                <button onClick={() => setStatus('IDLE')} className="px-6 py-2 bg-white/20 rounded-xl text-sm font-bold">Dismiss</button>
               </motion.div>
             ) : (
-              <motion.div 
-                key="idle"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="bg-slate-100 dark:bg-slate-800/50 border-4 border-dashed border-slate-200 dark:border-white/5 p-10 rounded-[3.5rem] h-full flex flex-col items-center justify-center text-center"
-              >
-                <i className="fas fa-qrcode text-6xl text-slate-300 dark:text-slate-700 mb-6"></i>
-                <p className="text-slate-400 dark:text-slate-600 font-black uppercase tracking-widest text-xs">Waiting for Scarf Scan...</p>
+              <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                className="bg-slate-100 dark:bg-slate-800/50 border-4 border-dashed border-slate-200 dark:border-white/5 p-10 rounded-[3rem] h-full flex flex-col items-center justify-center text-center">
+                <i className="fas fa-eye text-5xl text-slate-300 dark:text-slate-700 mb-4"></i>
+                <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Awaiting Iris Re-Verification</p>
               </motion.div>
             )}
           </AnimatePresence>

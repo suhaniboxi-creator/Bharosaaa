@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Pilgrim, Temple } from '../types';
+import { Pilgrim, Temple, GateNode } from '../types';
+import { api } from '../utils/api';
 
 interface ScannerProps {
   onScan: (qrValue: string) => Promise<boolean>;
@@ -10,178 +11,155 @@ interface ScannerProps {
 }
 
 export const Scanner: React.FC<ScannerProps> = ({ onScan, registeredPilgrims, currentTemple, t }) => {
-  const [scanResult, setScanResult] = useState<'IDLE' | 'SUCCESS' | 'ERROR' | 'SYNCING'>('IDLE');
+  const [scanResult, setScanResult] = useState<'IDLE' | 'VALIDATING' | 'SUCCESS' | 'ERROR'>('IDLE');
   const [manualInput, setManualInput] = useState('');
   const [isCameraActive, setIsCameraActive] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [lastScannedName, setLastScannedName] = useState('');
-
+  const [validationSteps, setValidationSteps] = useState<any[]>([]);
+  const [gates, setGates] = useState<GateNode[]>([]);
+  const [lastPilgrim, setLastPilgrim] = useState<any>(null);
+  const [edgeLatency, setEdgeLatency] = useState('');
   const themePrimary = currentTemple?.themeColor || '#F97316';
 
-  const handleScan = async (value: string) => {
-    setScanResult('SYNCING');
-    await new Promise(r => setTimeout(r, 1500)); // Visual "Syncing" delay
-    
-    const success = await onScan(value);
-    const pilgrim = registeredPilgrims.find(p => p.qrValue === value);
-    setLastScannedName(pilgrim?.qrValue || 'Unknown Scarf');
-    setScanResult(success ? 'SUCCESS' : 'ERROR');
-    
-    setTimeout(() => {
-      setScanResult('IDLE');
-      setLastScannedName('');
-    }, 3000);
-  };
+  useEffect(() => {
+    api.getGateStatus().then(res => { if (res.success) setGates(res.gates); });
+    const interval = setInterval(() => { api.getGateStatus().then(res => { if (res.success) setGates(res.gates); }); }, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (isCameraActive && videoRef.current) {
       navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-          if (videoRef.current) videoRef.current.srcObject = stream;
-        })
-        .catch(err => {
-          console.error("Camera error:", err);
-          setIsCameraActive(false);
-        });
+        .then(stream => { if (videoRef.current) videoRef.current.srcObject = stream; })
+        .catch(() => setIsCameraActive(false));
     } else if (videoRef.current?.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
+      (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
     }
   }, [isCameraActive]);
 
+  const handleTripleValidation = async (value: string) => {
+    setScanResult('VALIDATING');
+    setValidationSteps([]);
+
+    const res = await api.validateEntry(value, 'GATE-A');
+    if (res.success !== undefined) {
+      // Animate steps sequentially
+      for (let i = 0; i < (res.steps || []).length; i++) {
+        await new Promise(r => setTimeout(r, 600));
+        setValidationSteps(prev => [...prev, res.steps[i]]);
+      }
+      await new Promise(r => setTimeout(r, 400));
+
+      if (res.success) {
+        setScanResult('SUCCESS');
+        setLastPilgrim(res.pilgrim);
+        setEdgeLatency(res.edgeLatency || '3ms');
+        await onScan(value);
+      } else {
+        setScanResult('ERROR');
+      }
+      setTimeout(() => { setScanResult('IDLE'); setValidationSteps([]); setLastPilgrim(null); }, 4000);
+    } else {
+      // Fallback to legacy scan
+      const success = await onScan(value);
+      setScanResult(success ? 'SUCCESS' : 'ERROR');
+      setTimeout(() => { setScanResult('IDLE'); setValidationSteps([]); }, 3000);
+    }
+  };
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
-      <div className={`relative rounded-[3rem] overflow-hidden shadow-2xl transition-all duration-500 border-8 ${
-        scanResult === 'SUCCESS' ? 'border-green-500 shadow-green-500/20' : 
-        scanResult === 'ERROR' ? 'border-red-500 shadow-red-500/20' : 
-        scanResult === 'SYNCING' ? 'border-blue-500 animate-pulse' : 'border-slate-800 dark:border-slate-700'
-      }`}>
+    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
+      {/* Triple Validation Display */}
+      {validationSteps.length > 0 && (
+        <div className="bg-slate-900 p-6 rounded-[2rem] shadow-2xl space-y-3">
+          <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-4">Triple Validation</p>
+          {validationSteps.map((step: any, i: number) => (
+            <div key={i} className={`flex items-center gap-4 p-4 rounded-xl transition-all animate-in fade-in slide-in-from-left duration-300 ${step.passed ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${step.passed ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+                <i className={`fas ${step.passed ? 'fa-check' : 'fa-times'}`}></i>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <i className={`fas ${step.icon} text-slate-400 text-sm`}></i>
+                  <span className="text-white font-black text-sm">{step.name}</span>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">{step.details}</p>
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full" style={{ color: step.passed ? '#22c55e' : '#ef4444', backgroundColor: step.passed ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)' }}>
+                Step {step.step}
+              </span>
+            </div>
+          ))}
+          {edgeLatency && <div className="flex items-center gap-2 mt-2"><div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div><span className="text-[9px] text-slate-500 font-black uppercase tracking-widest">Edge Processing: {edgeLatency}</span></div>}
+        </div>
+      )}
+
+      {/* Scanner Area */}
+      <div className={`relative rounded-[2.5rem] overflow-hidden shadow-2xl transition-all duration-500 border-4 ${scanResult === 'SUCCESS' ? 'border-green-500 shadow-green-500/20' : scanResult === 'ERROR' ? 'border-red-500' : 'border-slate-800'}`}>
         <div className="aspect-video bg-black flex items-center justify-center text-white relative">
           {isCameraActive ? (
             <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover opacity-60" />
           ) : (
             <div className="text-center space-y-6">
               <div className="w-20 h-20 rounded-[2rem] bg-white/5 flex items-center justify-center mx-auto border border-white/10">
-                 <i className="fas fa-camera text-4xl opacity-30"></i>
+                <i className="fas fa-camera text-4xl opacity-30"></i>
               </div>
-              <p className="text-slate-400 text-sm font-black tracking-widest uppercase">Awaiting Scarf Interaction</p>
-              <button 
-                onClick={() => setIsCameraActive(true)}
-                className="px-10 py-5 text-white font-black rounded-3xl transition-all shadow-xl hover:scale-105 active:scale-95"
-                style={{ backgroundColor: themePrimary }}
-              >
+              <p className="text-slate-400 text-sm font-black tracking-widest uppercase">Awaiting Scarf Scan</p>
+              <button onClick={() => setIsCameraActive(true)} className="px-10 py-5 text-white font-black rounded-3xl shadow-xl hover:scale-105 active:scale-95 transition-all" style={{ backgroundColor: themePrimary }}>
                 START OPTICAL SCAN
               </button>
             </div>
           )}
-
-          {scanResult === 'SYNCING' && (
-            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-300">
-              <div className="relative w-32 h-32 mb-8">
-                <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
-                <div className="absolute inset-0 border-t-4 border-blue-500 rounded-full animate-spin"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <i className="fas fa-link text-blue-500 text-4xl animate-pulse"></i>
-                </div>
-              </div>
-              <h2 className="text-2xl font-black uppercase tracking-[0.3em]">Scarf Data Flowing</h2>
-              <p className="text-blue-400 font-bold mt-2">Syncing to Immutable Trust Ledger...</p>
-              
-              {/* Particle flow visualization */}
-              <div className="absolute bottom-10 flex gap-4">
-                {[1,2,3,4,5].map(i => (
-                  <div key={i} className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: `${i*0.2}s` }}></div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {scanResult === 'IDLE' && isCameraActive && (
-            <div className="absolute inset-0 border-2 border-white/20 m-12 pointer-events-none rounded-[2rem]">
-              <div className="absolute top-0 left-0 w-16 h-16 border-t-8 border-l-8 rounded-tl-[2rem]" style={{ borderColor: themePrimary }}></div>
-              <div className="absolute top-0 right-0 w-16 h-16 border-t-8 border-r-8 rounded-tr-[2rem]" style={{ borderColor: themePrimary }}></div>
-              <div className="absolute bottom-0 left-0 w-16 h-16 border-b-8 border-l-8 rounded-bl-[2rem]" style={{ borderColor: themePrimary }}></div>
-              <div className="absolute bottom-0 right-0 w-16 h-16 border-b-8 border-r-8 rounded-br-[2rem]" style={{ borderColor: themePrimary }}></div>
-              <div className="w-full h-1 absolute shadow-[0_0_30px_rgba(255,255,255,0.8)] animate-[scan_2.5s_infinite] opacity-50" style={{ backgroundColor: themePrimary, top: '10%' }}></div>
-            </div>
-          )}
-
           {scanResult === 'SUCCESS' && (
             <div className="absolute inset-0 bg-green-500/90 backdrop-blur-md flex flex-col items-center justify-center animate-in zoom-in duration-500">
-              <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center mb-6 shadow-2xl text-green-600">
-                 <i className="fas fa-check text-5xl"></i>
-              </div>
-              <h2 className="text-4xl font-black tracking-tight uppercase italic">Access Verified</h2>
-              <p className="text-xl font-mono mt-2">{lastScannedName}</p>
-              <div className="mt-8 bg-black/20 px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                 <i className="fas fa-microchip"></i> Scarf ID Authenticated
+              <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center mb-4 text-green-600"><i className="fas fa-check text-4xl"></i></div>
+              <h2 className="text-3xl font-black uppercase italic">Access Verified</h2>
+              {lastPilgrim && <p className="text-xl font-bold mt-2">{lastPilgrim.name}</p>}
+              <div className="mt-4 bg-black/20 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                <i className="fas fa-eye"></i> Iris-Backed Identity Confirmed
               </div>
             </div>
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-xl transition-colors duration-300">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400">
-              <i className="fas fa-keyboard"></i>
-            </div>
-            <h3 className="font-black dark:text-white uppercase tracking-widest text-sm">Staff Override</h3>
-          </div>
-          <div className="space-y-4">
-            <select 
-              value={manualInput}
-              onChange={e => setManualInput(e.target.value)}
-              className="w-full px-6 py-5 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none outline-none font-bold dark:text-white text-base shadow-inner"
-            >
+      {/* Staff Override + Gate Status */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-xl">
+          <h3 className="font-black dark:text-white uppercase tracking-widest text-sm mb-4 flex items-center gap-2"><i className="fas fa-keyboard text-slate-400"></i> Staff Override</h3>
+          <div className="space-y-3">
+            <select value={manualInput} onChange={e => setManualInput(e.target.value)} className="w-full px-4 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none outline-none font-bold dark:text-white">
               <option value="">Select Scarf Record...</option>
               {registeredPilgrims.filter(p => p.status === 'PENDING').map(p => (
                 <option key={p.id} value={p.qrValue}>{p.id} - {p.name}</option>
               ))}
             </select>
-            <button 
-              onClick={() => handleScan(manualInput)}
-              disabled={!manualInput}
-              className="w-full text-white font-black py-5 rounded-3xl transition-all shadow-xl active:scale-95 disabled:opacity-50 hover:brightness-110"
-              style={{ backgroundColor: themePrimary }}
-            >
-              VALIDATE SCARF TOKEN
+            <button onClick={() => handleTripleValidation(manualInput)} disabled={!manualInput || scanResult === 'VALIDATING'}
+              className="w-full text-white font-black py-4 rounded-2xl shadow-xl active:scale-95 disabled:opacity-50 transition-all" style={{ backgroundColor: themePrimary }}>
+              {scanResult === 'VALIDATING' ? <><i className="fas fa-circle-notch animate-spin mr-2"></i> Validating...</> : 'VALIDATE WITH TRIPLE CHECK'}
             </button>
           </div>
         </div>
 
-        <div className="bg-slate-900 text-white p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col justify-between">
-          <i className={`fas ${currentTemple?.icon || 'fa-om'} absolute -right-10 -bottom-10 text-[10rem] opacity-5`}></i>
-          <h3 className="font-black uppercase tracking-[0.3em] text-xs text-slate-400 mb-6">Temple Live Insights</h3>
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Current Crowd Density</span>
-              <span className="font-mono text-orange-400">MODERATE (64%)</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Active Pilgrims in Node</span>
-              <span className="font-mono text-green-400">{registeredPilgrims.filter(p => p.status === 'CHECKED_IN').length} Souls</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Avg. Sanctum Wait Time</span>
-              <span className="font-mono">18 Minutes</span>
-            </div>
-          </div>
-          <div className="mt-8 pt-6 border-t border-white/10 flex items-center gap-3">
-             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-             <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Divine Flow Optimized</span>
+        <div className="bg-slate-900 text-white p-6 rounded-[2rem] shadow-2xl">
+          <h3 className="font-black uppercase tracking-widest text-xs text-slate-400 mb-4 flex items-center gap-2"><i className="fas fa-door-open text-orange-400"></i> Gate Status</h3>
+          <div className="space-y-2">
+            {gates.map(g => (
+              <div key={g.gateId} className="flex items-center justify-between bg-white/5 p-3 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className={`w-2 h-2 rounded-full ${g.status === 'ACTIVE' ? 'bg-green-500' : g.status === 'IDLE' ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
+                  <span className="text-sm font-bold">{g.gateId}</span>
+                </div>
+                <div className="flex items-center gap-4 text-[10px]">
+                  <span className="text-slate-400">{g.throughput} processed</span>
+                  <span className="text-slate-400">Q: {g.queueDepth}</span>
+                  <span className="font-mono text-green-400">{g.latency}ms</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes scan {
-          0% { top: 10%; opacity: 0.1; }
-          50% { top: 90%; opacity: 0.8; }
-          100% { top: 10%; opacity: 0.1; }
-        }
-      `}</style>
     </div>
   );
 };
